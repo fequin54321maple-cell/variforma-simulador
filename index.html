@@ -168,6 +168,24 @@
   .legend { display: flex; gap: 10px; flex-wrap: wrap; color: var(--muted); font-size: 11px; }
   .sw { display: inline-block; width: 18px; height: 0; border-top: 2px solid currentColor; vertical-align: middle; margin-right: 4px; }
   .sw.dash { border-top-style: dashed; }
+  .plot-legend {
+    position: absolute; left: 8px; bottom: 8px; z-index: 3;
+    display: flex; flex-wrap: wrap; gap: 4px 10px; padding: 4px 8px;
+    background: rgba(16,20,28,.86); border: 1px solid var(--line); border-radius: 6px;
+    font-size: 11px; color: var(--muted); pointer-events: none;
+    max-width: calc(100% - 24px);
+  }
+  .plot-legend span { display: inline-flex; align-items: center; white-space: nowrap; }
+  .pick-info {
+    position: absolute; left: 8px; right: auto; bottom: 42px; z-index: 4;
+    display: none; align-items: center; gap: 8px; padding: 6px 8px;
+    background: rgba(16,20,28,.94); border: 1px solid var(--line); border-radius: 8px;
+    font-size: 12px; color: var(--text); max-width: min(520px, calc(100% - 16px));
+    box-shadow: 0 4px 16px rgba(0,0,0,.35);
+  }
+  .pick-info.show { display: flex; }
+  .pick-info #pickLineText { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pick-info #btnGoCode { flex: none; min-height: 44px; min-width: 44px; padding: 6px 12px; }
   .splitter { width: 7px; cursor: col-resize; background: var(--bg2); border-left: 1px solid var(--line); border-right: 1px solid var(--line); flex: none; }
   .splitter:hover, .splitter.drag { background: #1f3a5a; }
   .side { width: 34vw; min-width: 280px; max-width: 75vw; display: flex; flex-direction: column; background: var(--bg2); min-height: 0; flex: none; }
@@ -193,16 +211,18 @@
   #gutInner .g.mod, #gutInner .g.add { color: var(--ok); box-shadow: inset 3px 0 var(--ok); }
   #gutInner .g.err::before, #gutInner .g.warn::before { content: "●"; position: absolute; left: 6px; font-size: 10px; }
   #gutInner .g.err::before { color: var(--err); } #gutInner .g.warn::before { color: var(--warn); }
-  #gutInner .g.cur { color: #fff; background: rgba(59,158,255,.25); }
+  #gutInner .g.cur, #gutInner .g.picked { color: #fff; background: rgba(255,45,120,.30); box-shadow: inset 3px 0 #ff2d78; }
   .backdrop { position: absolute; left: 52px; right: 0; top: 0; bottom: 0; overflow: hidden; pointer-events: none; }
   #backInner { padding: 4px 8px; white-space: pre; width: max-content; min-width: 100%; will-change: transform; }
   #backInner .l { height: var(--lh); }
   #backInner .t { color: transparent; }
+  .edwrap.mirror-scroll #ed { color: transparent; caret-color: transparent; }
+  .edwrap.mirror-scroll #backInner .t { color: var(--text); }
   #backInner .l.mod, #backInner .l.add { background: rgba(52,211,153,.10); }
   #backInner .l.delb { box-shadow: inset 0 2px 0 rgba(255,90,90,.8); }
   #backInner .l.warn { background: rgba(255,193,7,.12); }
   #backInner .l.err { background: rgba(255,90,90,.16); }
-  #backInner .l.cur { background: rgba(59,158,255,.28); }
+  #backInner .l.cur, #backInner .l.picked { background: rgba(255,45,120,.32); box-shadow: inset 3px 0 0 #ff2d78; }
   .im { margin-left: 3ch; font-style: italic; font-size: 11px; }
   .im.e { color: #ff8f8f; } .im.w { color: #ffd166; }
   #ed { position: absolute; left: 52px; top: 0; width: calc(100% - 52px); height: 100%; margin: 0; padding: 4px 8px; border: 0; outline: 0;
@@ -396,6 +416,11 @@
     min-height: var(--ui-tap); padding: 6px 8px; font-size: var(--ui-font-m);
   }
   html.layout-mobile #legend { display: none; }
+  html.layout-mobile .plot-legend {
+    left: 6px; bottom: 6px; font-size: 10px; padding: 3px 6px; gap: 3px 8px;
+  }
+  html.layout-mobile .pick-info { left: 6px; right: 6px; bottom: 36px; font-size: 12px; max-width: calc(100% - 12px); }
+  html.layout-mobile .app.mob-editor .pick-info { display: none !important; }
   html.layout-mobile .mob-tabs {
     display: flex;
     grid-area: tabs;
@@ -437,6 +462,8 @@
     html.layout-mobile .app.mob-editor .edstatus { display: none; }
   }
   html.layout-mobile .gutter, html.layout-mobile .backdrop { display: none; }
+  html.layout-mobile .app.mob-editor .gutter,
+  html.layout-mobile .app.mob-editor .backdrop { display: block; }
   html.layout-mobile .edwrap { font-size: calc(16px * var(--ui-scale)); line-height: var(--lh); }
   html.layout-mobile #ed {
     left: 0; width: 100%;
@@ -444,6 +471,10 @@
     font-size: calc(16px * var(--ui-scale)); line-height: var(--lh);
     white-space: pre; overflow: auto;
     -webkit-text-size-adjust: 100%;
+  }
+  html.layout-mobile .app.mob-editor #ed {
+    left: 52px; width: calc(100% - 52px);
+    background: transparent;
   }
   html.layout-mobile .li, html.layout-mobile .hunk, html.layout-mobile .blk {
     min-height: var(--ui-tap); padding-top: 10px; padding-bottom: 10px; font-size: var(--ui-font-m);
@@ -612,6 +643,22 @@
     padding: 16px 16px calc(16px + var(--sab));
   }
   #btnPrefs { font-size: 18px; }
+  .pref-colors {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px;
+  }
+  .pref-colors label {
+    display: flex; align-items: center; gap: 8px;
+    min-height: 44px; font-size: 14px; color: var(--text);
+  }
+  .pref-colors input[type=color] {
+    -webkit-appearance: none; appearance: none;
+    width: 48px; height: 36px; min-width: 44px; min-height: 36px;
+    padding: 0; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--bg3); cursor: pointer;
+  }
+  .pref-colors input[type=color]::-webkit-color-swatch-wrapper { padding: 2px; }
+  .pref-colors input[type=color]::-webkit-color-swatch { border: 0; border-radius: 4px; }
+  #btnResetColors { margin-top: 10px; }
 
   @media (orientation: landscape) {
     html.layout-mobile header {
@@ -635,7 +682,7 @@
     <div class="fname" id="fname">—</div>
     <span class="badge" id="editBadge" hidden>editado</span>
     <div class="hdr-actions">
-      <button class="btn icon-btn" id="btnPrefs" type="button" title="Tamaño y disposición" aria-label="Ajustes de pantalla">⚙</button>
+      <button class="btn icon-btn" id="btnPrefs" type="button" title="Tamaño, disposición y colores" aria-label="Ajustes de pantalla">⚙</button>
       <span class="dropbar">Arrastre un .NCD aquí o</span>
       <label class="btn primary" id="btnOpen" for="fileIn">Abrir archivo</label>
       <input type="file" id="fileIn" accept=".NCD,.ncd,.nc,.txt,text/plain,application/octet-stream" hidden>
@@ -649,6 +696,11 @@
     <div class="plotcol" id="plotcol">
       <div class="stage" id="stage">
         <canvas id="view"></canvas>
+        <div class="plot-legend" id="plotLegend" aria-label="Leyenda G00 G01 G02 G03"></div>
+        <div class="pick-info" id="pickInfo" hidden>
+          <div id="pickLineText"></div>
+          <button class="btn primary" type="button" id="btnGoCode">Ir al código</button>
+        </div>
         <div class="ro-strip" id="roStrip" title="Toque para ver más datos">
           <span><i>X</i><b id="rsX">—</b></span>
           <span><i>Z</i><b id="rsZ">—</b></span>
@@ -783,8 +835,8 @@
   </div>
   <div class="sheet-back" id="prefsSheet" hidden>
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="prefsSheetTitle">
-      <h2 id="prefsSheetTitle">Pantalla</h2>
-      <p>Ajuste el tamaño de botones y el modo de disposición. Auto elige según el teléfono.</p>
+      <h2 id="prefsSheetTitle">Ajustes</h2>
+      <p>Tamaño de botones, disposición y colores de la trayectoria. Auto elige según el teléfono.</p>
       <div class="pref-sec">
         <h3>Tamaño</h3>
         <div class="pref-seg" data-pref="scale" role="radiogroup" aria-label="Tamaño">
@@ -802,6 +854,16 @@
           <button type="button" data-val="horizontal">Horizontal</button>
         </div>
       </div>
+      <div class="pref-sec" id="prefColors">
+        <h3>Colores</h3>
+        <div class="pref-colors">
+          <label>G00 <input type="color" id="colG00" data-g="0" value="#9aa5b4" aria-label="Color G00"></label>
+          <label>G01 <input type="color" id="colG01" data-g="1" value="#3b9eff" aria-label="Color G01"></label>
+          <label>G02 <input type="color" id="colG02" data-g="2" value="#34d399" aria-label="Color G02"></label>
+          <label>G03 <input type="color" id="colG03" data-g="3" value="#c084fc" aria-label="Color G03"></label>
+        </div>
+        <button class="btn" type="button" id="btnResetColors">Restablecer</button>
+      </div>
       <button class="btn primary" type="button" id="prefsClose">Listo</button>
     </div>
   </div>
@@ -810,6 +872,9 @@
 const PRELOADED = /*%%SIM_DATA%%*/null;
 
 const TOOL_COLORS = { forming: "#3b9eff", flanging: "#ff8c42", other: "#c084fc" };
+const DEFAULT_G_COLORS = { 0: "#9aa5b4", 1: "#3b9eff", 2: "#34d399", 3: "#c084fc" };
+const SEL_COLOR = "#ff2d78";
+const SEL_CORE = "#ffffff";
 const DEFAULT_TOOLS = {
   T0101: { tip_radius: 12, diameter: 320, role: "forming", color: "#3b9eff",
            aliases: ["T01","T0101","T1"], label: "T0101 formado R12 Ø320" },
@@ -1622,6 +1687,8 @@ let sim = null, currentT = 0, playing = false, lastTs = 0;
 let view = { cz: 0, cr: 0, s: 1, ready: false };
 let lastSize = { w: 0, h: 0 };
 let boxTool = false, follow = false, followCursor = true, origSim = null, drag = null, hover = null;
+let selLine = 0, selBlocks = [], selNoMove = false, selSource = null, selPos = null;
+let gColors = { 0: DEFAULT_G_COLORS[0], 1: DEFAULT_G_COLORS[1], 2: DEFAULT_G_COLORS[2], 3: DEFAULT_G_COLORS[3] };
 let pointers = new Map(), pinch = null, lastTap = null, tapTimer = 0;
 let pendingSave = null, layoutMq = null;
 function isMobileLayout() {
@@ -1657,6 +1724,53 @@ function colorForTool(tool) {
   const spec = ((sim && sim.tools) || DEFAULT_TOOLS)[tool];
   if (spec && spec.color) return spec.color;
   return TOOL_COLORS[toolRole(tool, sim && sim.tools)] || TOOL_COLORS.other;
+}
+function normHex(s) {
+  if (typeof s !== "string") return null;
+  const m = s.trim().match(/^#?([0-9a-fA-F]{6})$/);
+  return m ? ("#" + m[1].toLowerCase()) : null;
+}
+function loadGColors() {
+  const saved = (uiState() && uiState().gColors) || {};
+  const next = {};
+  [0, 1, 2, 3].forEach(g => { next[g] = normHex(saved[g] || saved[String(g)]) || DEFAULT_G_COLORS[g]; });
+  gColors = next;
+  return gColors;
+}
+function colorForG(g) {
+  const k = (g === 0 || g === 1 || g === 2 || g === 3) ? g : 1;
+  return gColors[k] || DEFAULT_G_COLORS[k];
+}
+function colorForBlock(b) {
+  if (!b) return colorForG(1);
+  if (b.g === 0 || b.kind === "g30" || b.kind === "g28") return colorForG(0);
+  if (b.g === 2) return colorForG(2);
+  if (b.g === 3) return colorForG(3);
+  return colorForG(1);
+}
+function setGColor(g, hex, opts) {
+  opts = opts || {};
+  const v = normHex(hex);
+  if (v && (g === 0 || g === 1 || g === 2 || g === 3)) gColors[g] = v;
+  if (!opts.skipSave) saveUi({ gColors: { 0: gColors[0], 1: gColors[1], 2: gColors[2], 3: gColors[3] } });
+  syncColorInputs();
+  buildLegend();
+  if (!opts.silent) draw();
+  return colorForG(g);
+}
+function resetGColors(opts) {
+  gColors = { 0: DEFAULT_G_COLORS[0], 1: DEFAULT_G_COLORS[1], 2: DEFAULT_G_COLORS[2], 3: DEFAULT_G_COLORS[3] };
+  return setGColor(1, gColors[1], opts);
+}
+function syncColorInputs() {
+  [["colG00", 0], ["colG01", 1], ["colG02", 2], ["colG03", 3]].forEach(pair => {
+    const el = $(pair[0]);
+    if (el) el.value = colorForG(pair[1]);
+  });
+}
+function isCoarsePointer() {
+  try { if (window.matchMedia("(pointer: coarse)").matches) return true; } catch (e) {}
+  return isMobileLayout();
 }
 function tipFor(tool) {
   const spec = ((sim && sim.tools) || {})[tool] || DEFAULT_TOOLS[tool] || {};
@@ -1743,7 +1857,8 @@ function reparse(opts) {
   firstLoad = false;
   renderDecor();
   renderLintList();
-  if (!fit && followCursor) syncCursorOnPlot({ silent: false, scrollEditor: false });
+  if (selLine) selectLine(selLine, { source: selSource || "editor", silent: false, keepTime: true, revealEditor: false });
+  else if (!fit && followCursor) syncCursorOnPlot({ silent: false, scrollEditor: false });
 }
 
 function loadSim(s, o) {
@@ -1770,19 +1885,56 @@ function lineStartOffset(line) {
   return i;
 }
 function goToLine(line, select) {
+  revealEditorLine(line, { focus: !!select });
+}
+function revealEditorLine(line, opts) {
+  opts = opts || {};
   if (!line) return;
   const start = lineStartOffset(line);
   let end = ed.value.indexOf("\n", start); if (end < 0) end = ed.value.length;
-  if (select) { statusLineOverride = null; ed.focus({ preventScroll: true }); ed.setSelectionRange(start, end); }
-  else statusLineOverride = line;
-  ed.scrollTop = Math.max(0, (line - 1) * lineH() - ed.clientHeight / 2 + lineH());
-  syncScroll();
+  const allowFocus = !!opts.focus && !isCoarsePointer();
+  if (allowFocus) {
+    statusLineOverride = null;
+    ed.focus({ preventScroll: true });
+    ed.setSelectionRange(start, end);
+  } else {
+    statusLineOverride = line;
+  }
+  scrollEditorToLine(line, 0.35);
   highlightEditorLine(line, false);
   updateStatus();
 }
 function syncScroll() {
-  $("backInner").style.transform = "translate(" + (-ed.scrollLeft) + "px," + (-ed.scrollTop) + "px)";
-  $("gutInner").style.transform = "translateY(" + (-ed.scrollTop) + "px)";
+  applyEditorScroll(ed.scrollLeft, ed.scrollTop, true);
+}
+let editorViewScroll = { x: 0, y: 0 };
+function applyEditorScroll(x, y, fromTextarea) {
+  if (!ed) return;
+  const lh = lineH();
+  const nlines = (ed.value.split("\n").length) || 1;
+  const contentH = nlines * lh + 16;
+  const maxY = Math.max(0, contentH - (ed.clientHeight || 0), (ed.scrollHeight - ed.clientHeight) || 0);
+  const maxX = Math.max(0, (ed.scrollWidth - ed.clientWidth) || 0);
+  y = Math.max(0, Math.min(Number(y) || 0, maxY));
+  x = Math.max(0, Math.min(Number(x) || 0, maxX));
+  editorViewScroll = { x: x, y: y };
+  if (!fromTextarea) {
+    try { ed.scrollTop = y; ed.scrollLeft = x; } catch (e) {}
+  }
+  if ($("backInner")) $("backInner").style.transform = "translate(" + (-x) + "px," + (-y) + "px)";
+  if ($("gutInner")) $("gutInner").style.transform = "translateY(" + (-y) + "px)";
+}
+function setMirrorScroll(on) {
+  if ($("edwrap")) $("edwrap").classList.toggle("mirror-scroll", !!on);
+}
+function scrollEditorToLine(line, frac) {
+  if (!ed || !line) return 0;
+  const lh = lineH();
+  const ch = ed.clientHeight || 0;
+  const y = Math.max(0, (line - 1) * lh - Math.max(24, ch * (frac == null ? 0.35 : frac)));
+  applyEditorScroll(ed.scrollLeft || editorViewScroll.x, y, false);
+  if (isCoarsePointer() && document.activeElement !== ed) setMirrorScroll(true);
+  return editorViewScroll.y;
 }
 function renderDecor() {
   const lines = ed.value.split("\n");
@@ -1807,21 +1959,31 @@ function renderDecor() {
   $("gutInner").innerHTML = gh;
   curEdLine = -1;
   syncScroll();
-  const idx = blockIndexAt(currentT);
-  if (sim && idx >= 0) highlightEditorLine(sim.blocks[idx].line, false);
+  highlightEditorLine(editorHighlightLine(), false);
   renderDiffList();
   updateEditBadge();
   updateStatus();
 }
+function editorHighlightLine() {
+  if (selLine) return selLine;
+  const idx = blockIndexAt(currentT);
+  if (sim && idx >= 0 && sim.blocks[idx]) return sim.blocks[idx].line;
+  return editorCursorLine();
+}
 function highlightEditorLine(line, autoscroll) {
-  if (line === curEdLine) return;
   const b = $("backInner").children, g = $("gutInner").children;
-  if (curEdLine > 0) { if (b[curEdLine - 1]) b[curEdLine - 1].classList.remove("cur"); if (g[curEdLine - 1]) g[curEdLine - 1].classList.remove("cur"); }
+  function setCls(i, on) {
+    if (i < 0) return;
+    if (b[i]) { b[i].classList.toggle("cur", on); b[i].classList.toggle("picked", on && selLine === i + 1); }
+    if (g[i]) { g[i].classList.toggle("cur", on); g[i].classList.toggle("picked", on && selLine === i + 1); }
+  }
+  if (curEdLine > 0 && curEdLine !== line) setCls(curEdLine - 1, false);
   curEdLine = line;
-  if (line > 0) { if (b[line - 1]) b[line - 1].classList.add("cur"); if (g[line - 1]) g[line - 1].classList.add("cur"); }
+  if (line > 0) setCls(line - 1, true);
   if (autoscroll && line > 0 && (playing || document.activeElement !== ed)) {
-    const lh = lineH(), top = (line - 1) * lh, vis0 = ed.scrollTop, vis1 = vis0 + ed.clientHeight - 2 * lh;
-    if (top < vis0 || top > vis1) { ed.scrollTop = Math.max(0, top - ed.clientHeight / 3); syncScroll(); }
+    const lh = lineH(), top = (line - 1) * lh;
+    const vis0 = editorViewScroll.y, vis1 = vis0 + Math.max(0, (ed.clientHeight || 0) - 2 * lh);
+    if (top < vis0 || top > vis1) scrollEditorToLine(line, 0.33);
   }
 }
 function updateEditBadge() {
@@ -1900,6 +2062,7 @@ function showRestoreBanner(saved) {
 }
 
 function openProgram(text, name, preloaded) {
+  selLine = 0; selBlocks = []; selNoMove = false; selSource = null; selPos = null;
   original = String(text).replace(/\r\n?/g, "\n");
   originalName = name || "programa.NCD";
   isPreloadedFile = !!preloaded;
@@ -2041,16 +2204,28 @@ function buildNotes() {
   el.innerHTML = bits.length ? "<b>Notas del intérprete</b><br>" + bits.join("<br>") : "";
   if ($("dataNotes")) $("dataNotes").innerHTML = el.innerHTML;
 }
+function gLegendParts() {
+  const items = [
+    [0, "G00", true],
+    [1, "G01", false],
+    [2, "G02", false],
+    [3, "G03", false]
+  ];
+  return items.map(it => {
+    const c = colorForG(it[0]);
+    return '<span style="color:' + c + '"><i class="sw' + (it[2] ? " dash" : "") + '" style="border-color:' + c + '"></i>' + it[1] + "</span>";
+  });
+}
 function buildLegend() {
-  const tools = (sim && sim.tools) || DEFAULT_TOOLS, parts = [];
+  const tools = (sim && sim.tools) || DEFAULT_TOOLS, parts = gLegendParts();
   for (const k of Object.keys(tools)) {
     const c = tools[k].color || colorForTool(k);
     parts.push('<span style="color:' + c + '"><i class="sw" style="border-color:' + c + '"></i>' + escapeHtml(tools[k].label || k) + "</span>");
   }
-  parts.push('<span><i class="sw dash" style="border-color:#93a0b3"></i>Rápidos G00 / G30</span>');
   parts.push('<span style="color:#e8e0d0"><i class="sw" style="border-color:#e8e0d0"></i>Mandril</span>');
-  $("legend").innerHTML = parts.join("");
+  if ($("legend")) $("legend").innerHTML = parts.join("");
   if ($("dataLegend")) $("dataLegend").innerHTML = parts.join("");
+  if ($("plotLegend")) $("plotLegend").innerHTML = gLegendParts().join("");
 }
 function buildListing() {
   const root = $("listing"); root.innerHTML = "";
@@ -2152,8 +2327,14 @@ function updateReadout() {
     fmtTime((cyc.rapid_s || 0) + (cyc.zrn_s || 0)) + " · esperas " + fmtTime(cyc.dwell_s) +
     ((sim && sim.machine && sim.machine.limits_are_placeholder) ? " (rápido PLACEHOLDER)" : " (G00 5200, ZRN 2000)") + "</div></div>" +
     (lint ? '<div class="span2" style="color:var(--warn);font-size:11px">' + escapeHtml(lint) + "</div>" : "") +
-    ((b.events && b.events.length) ? '<div class="span2" style="color:var(--muted);font-size:11px">' + escapeHtml(b.events.join(" · ")) + "</div>" : "");
+    ((b.events && b.events.length) ? '<div class="span2" style="color:var(--muted);font-size:11px">' + escapeHtml(b.events.join(" · ")) + "</div>" : "") +
+    (selLine ? ('<div class="span2" style="font-size:11px">' + (selNoMove ? '<span class="pill on">sin movimiento</span> ' : "") +
+      escapeHtml(formatSelLineText()) +
+      (inCodeTab() ? "" : ' <button class="btn" type="button" id="btnGoCodeRo" style="margin-left:6px;padding:2px 8px;font-size:11px">Ir al código</button>') +
+      "</div>") : "");
   $("readout").innerHTML = html;
+  const goRo = $("btnGoCodeRo");
+  if (goRo) goRo.addEventListener("click", goToCodeFromPick);
   if ($("dataReadout")) $("dataReadout").innerHTML = html;
   const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
   set("rsX", fmt(st.x, 2));
@@ -2330,9 +2511,11 @@ function draw() {
       const rapid = b.g === 0 || b.kind === "g30" || b.kind === "g28";
       const cur = i === idx, past = i < idx;
       const changed = edited && isChangedBlock(b, omap);
+      const col = colorForBlock(b);
       if (changed) drawPolyline(b.points, "#fbbf24", cur ? 5.4 : 4.2, [], cur ? 0.9 : 0.55);
-      drawPolyline(b.points, changed && !cur ? "#fde68a" : colorForTool(b.tool), cur ? 2.8 : rapid ? 1.1 : 1.8, rapid && !changed ? [7, 5] : [], cur ? 1 : past ? 0.88 : 0.38);
+      drawPolyline(b.points, changed && !cur ? "#fde68a" : col, cur ? 2.8 : rapid ? 1.2 : 1.8, rapid && !changed ? [7, 5] : [], cur ? 1 : past ? 0.88 : 0.38);
     });
+    drawSelectionOverlay();
     sim.blocks.forEach(b => {
       const lv = (b.lint || []).some(i => i.level === "error") ? "e" : (b.lint || []).some(i => i.level === "warning") ? "w" : "";
       if (!lv || b.end_x == null || b.end_z == null) return;
@@ -2357,8 +2540,8 @@ function redraw() {
   const total = (sim && sim.cycle && sim.cycle.total_s) || 0;
   $("timeline").value = String(total > 0 ? Math.round((currentT / total) * 1000) : 0);
   $("timeLbl").textContent = fmtTime(currentT) + " / " + fmtTime(total);
-  draw(); updateReadout(); highlightListing(idx);
-  if (sim && idx >= 0) highlightEditorLine(sim.blocks[idx].line, true);
+  draw(); updateReadout(); updatePickInfo(); highlightListing(idx);
+  highlightEditorLine(editorHighlightLine(), true);
 }
 function resize() {
   const dpr = window.devicePixelRatio || 1, w = canvas.clientWidth, h = canvas.clientHeight;
@@ -2379,35 +2562,48 @@ function canvasXY(ev) {
   const r = canvas.getBoundingClientRect();
   return [ev.clientX - r.left, ev.clientY - r.top];
 }
-function pick(x, y, opts) {
+function hitTolerance(opts) {
+  if (opts && opts.hit != null) return opts.hit;
+  return isMobileLayout() || isCoarsePointer() ? 22 : 12;
+}
+function nearestBlockAt(x, y, opts) {
   if (!sim) return null;
-  opts = opts || {};
-  const hit = opts.hit != null ? opts.hit : (isMobileLayout() ? 28 : 10);
+  const hit = hitTolerance(opts);
   let best = null;
   sim.blocks.forEach(b => {
-    const pts = b.points || []; if (pts.length < 2) return;
-    const lens = cumLengths(pts), L = lens[lens.length - 1] || 1;
-    for (let k = 1; k < pts.length; k++) {
-      const a = w2s(pts[k - 1][0], pts[k - 1][1] / 2), c = w2s(pts[k][0], pts[k][1] / 2);
-      const vx = c[0] - a[0], vy = c[1] - a[1], ll = vx * vx + vy * vy;
-      const u = ll < 1e-9 ? 0 : Math.max(0, Math.min(1, ((x - a[0]) * vx + (y - a[1]) * vy) / ll));
-      const d = Math.hypot(x - a[0] - u * vx, y - a[1] - u * vy);
-      if (!best || d < best.d) best = { d, b, frac: (lens[k - 1] + u * (lens[k] - lens[k - 1])) / L };
+    const pts = b.points || [];
+    if (pts.length >= 2) {
+      const lens = cumLengths(pts), L = lens[lens.length - 1] || 1;
+      for (let k = 0; k < pts.length; k++) {
+        const p = w2s(pts[k][0], pts[k][1] / 2);
+        const d = Math.hypot(x - p[0], y - p[1]);
+        if (!best || d < best.d) best = { d, b, frac: L ? lens[Math.min(k, lens.length - 1)] / L : 0 };
+      }
+      for (let k = 1; k < pts.length; k++) {
+        const a = w2s(pts[k - 1][0], pts[k - 1][1] / 2), c = w2s(pts[k][0], pts[k][1] / 2);
+        const vx = c[0] - a[0], vy = c[1] - a[1], ll = vx * vx + vy * vy;
+        const u = ll < 1e-9 ? 0 : Math.max(0, Math.min(1, ((x - a[0]) * vx + (y - a[1]) * vy) / ll));
+        const d = Math.hypot(x - a[0] - u * vx, y - a[1] - u * vy);
+        if (!best || d < best.d) best = { d, b, frac: (lens[k - 1] + u * (lens[k] - lens[k - 1])) / L };
+      }
+    } else if (b.end_x != null && b.end_z != null) {
+      const p = w2s(b.end_z, b.end_x / 2);
+      const d = Math.hypot(x - p[0], y - p[1]);
+      if (!best || d < best.d) best = { d, b, frac: 0 };
     }
   });
   if (!best || best.d > hit) return null;
+  return best;
+}
+function pick(x, y, opts) {
+  opts = opts || {};
+  const best = nearestBlockAt(x, y, opts);
+  if (!best) return null;
   const b = best.b;
-  currentT = b.t0 + best.frac * (b.t1 - b.t0);
   playing = false; syncPlayBtn();
-  redraw();
-  goToLine(b.line, !isMobileLayout());
-  if (isMobileLayout()) {
-    toast("L" + b.line + ": " + (b.text || "").trim() + " · Código para editar");
-  } else {
-    showPanel(true); setTab("editor");
-    goToLine(b.line, true);
-    toast("L" + b.line + ": " + (b.text || "").trim());
-  }
+  currentT = b.t0 + best.frac * ((b.t1 || b.t0) - b.t0);
+  selectLine(b.line, { source: "plot", silent: false, keepTime: true, revealEditor: true, focus: false, scrollEditor: true });
+  if (!inCodeTab()) updatePickInfo();
   return b;
 }
 function startPinch() {
@@ -2526,6 +2722,7 @@ function setTab(name) {
   document.querySelectorAll("#side > .pane").forEach(p => p.classList.toggle("on", p.id === "pane-" + name));
   if (name === "editor") syncScroll();
   if (name === "blocks") highlightListing(blockIndexAt(currentT));
+  updatePickInfo();
 }
 function setMobTab(name) {
   const app = $("app");
@@ -2555,6 +2752,7 @@ function setMobTab(name) {
   requestAnimationFrame(() => {
     resize();
     if (name === "editor") syncCursorOnPlot({ scrollEditor: true });
+    updatePickInfo();
   });
 }
 function syncCheckboxes() {
@@ -2645,6 +2843,7 @@ function openPrefs() {
   el.hidden = false;
   el.classList.add("show");
   applyUiScale();
+  syncColorInputs();
 }
 function closePrefs() {
   const el = $("prefsSheet");
@@ -2706,6 +2905,15 @@ document.querySelectorAll(".mob-tab").forEach(t => t.addEventListener("click", (
 if ($("btnPrefs")) $("btnPrefs").addEventListener("click", openPrefs);
 if ($("prefsClose")) $("prefsClose").addEventListener("click", closePrefs);
 if ($("prefsSheet")) $("prefsSheet").addEventListener("click", ev => { if (ev.target === $("prefsSheet")) closePrefs(); });
+if ($("btnResetColors")) $("btnResetColors").addEventListener("click", () => resetGColors());
+["colG00", "colG01", "colG02", "colG03"].forEach(id => {
+  const el = $(id);
+  if (!el) return;
+  const apply = () => setGColor(parseInt(el.dataset.g, 10), el.value);
+  el.addEventListener("input", apply);
+  el.addEventListener("change", apply);
+});
+if ($("btnGoCode")) $("btnGoCode").addEventListener("click", goToCodeFromPick);
 document.querySelectorAll(".pref-seg").forEach(seg => {
   seg.addEventListener("click", ev => {
     const b = ev.target.closest("button[data-val]");
@@ -2865,11 +3073,142 @@ function keepEditorLineVisible() {
   const line = editorCursorLine();
   const lh = lineH();
   const top = (line - 1) * lh;
-  const vis0 = ed.scrollTop, vis1 = vis0 + Math.max(0, ed.clientHeight - 2 * lh);
-  if (top < vis0 || top > vis1) {
-    ed.scrollTop = Math.max(0, top - Math.max(24, ed.clientHeight * 0.25));
-    syncScroll();
+  const vis0 = editorViewScroll.y, vis1 = vis0 + Math.max(0, (ed.clientHeight || 0) - 2 * lh);
+  if (top < vis0 || top > vis1) scrollEditorToLine(line, 0.25);
+}
+function blocksForLine(line) {
+  if (!sim || !line) return [];
+  return sim.blocks.filter(b => b.line === line);
+}
+function blockIsMotion(b) {
+  return !!(b && b.points && b.points.length >= 2 && (b.kind === "move" || b.kind === "g30" || b.kind === "g28"));
+}
+function positionAtLine(line) {
+  if (!sim) return null;
+  let pos = null;
+  for (let i = 0; i < sim.blocks.length; i++) {
+    const b = sim.blocks[i];
+    if (b.line != null && b.line > line) break;
+    if (b.end_x != null && b.end_z != null) pos = { z: b.end_z, x: b.end_x, tool: b.tool };
+    else if (b.start_x != null && b.start_z != null) pos = { z: b.start_z, x: b.start_x, tool: b.tool };
   }
+  return pos;
+}
+function formatSelLineText() {
+  if (!selLine) return "";
+  const raw = (ed && ed.value ? ed.value.split("\n")[selLine - 1] : "") || "";
+  const b = selBlocks[0] || null;
+  let n = "";
+  if (b && b.n != null && b.n !== "") {
+    const s = String(b.n);
+    n = (/^N/i.test(s) ? s : ("N" + String(parseInt(s, 10)).padStart(4, "0"))) + " · ";
+  }
+  return n + "L" + selLine + ": " + raw.trim();
+}
+function inCodeTab() {
+  if (isMobileLayout()) return ($("app").dataset.mobTab || "plot") === "editor";
+  const pane = $("pane-editor");
+  return !!(pane && pane.classList.contains("on") && !($("side") && $("side").classList.contains("collapsed")));
+}
+function goToCodeFromPick() {
+  if (isMobileLayout()) setMobTab("editor");
+  else { showPanel(true); setTab("editor"); }
+  if (selLine) revealEditorLine(selLine, { focus: false });
+  updatePickInfo();
+}
+function updatePickInfo() {
+  const el = $("pickInfo");
+  if (!el) return;
+  if (!selLine || inCodeTab()) {
+    el.classList.remove("show");
+    el.hidden = true;
+    return;
+  }
+  const txt = formatSelLineText() + (selNoMove ? "  (sin movimiento)" : "");
+  if ($("pickLineText")) $("pickLineText").textContent = txt;
+  const btn = $("btnGoCode");
+  if (btn) btn.hidden = false;
+  el.hidden = false;
+  el.classList.add("show");
+}
+function drawPointMark(z, xDia, fill, stroke, r) {
+  if (z == null || xDia == null) return;
+  const p = w2s(z, xDia / 2);
+  ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, Math.PI * 2);
+  if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+  ctx.lineWidth = 2; ctx.strokeStyle = stroke || SEL_COLOR; ctx.stroke();
+}
+function drawSelectionOverlay() {
+  if (!selLine) return;
+  ctx.save();
+  if (selNoMove) {
+    const pos = selPos;
+    if (pos && pos.z != null && pos.x != null) {
+      const p = w2s(pos.z, pos.x / 2);
+      ctx.strokeStyle = SEL_COLOR; ctx.lineWidth = 2.5; ctx.globalAlpha = 1;
+      ctx.beginPath(); ctx.moveTo(p[0] - 9, p[1]); ctx.lineTo(p[0] + 9, p[1]); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(p[0], p[1] - 9); ctx.lineTo(p[0], p[1] + 9); ctx.stroke();
+      ctx.beginPath(); ctx.arc(p[0], p[1], 7, 0, Math.PI * 2); ctx.stroke();
+      ctx.font = "11px system-ui, sans-serif"; ctx.fillStyle = SEL_COLOR; ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+      ctx.fillText("sin movimiento  L" + selLine, p[0] + 10, p[1] - 8);
+    }
+    ctx.restore();
+    return;
+  }
+  selBlocks.forEach(b => {
+    if (!blockIsMotion(b)) return;
+    drawPolyline(b.points, "#0e1116", 8.5, [], 0.85);
+    drawPolyline(b.points, SEL_COLOR, 5.2, [], 1);
+    drawPolyline(b.points, SEL_CORE, 1.6, [], 1);
+    const a = b.points[0], c = b.points[b.points.length - 1];
+    drawPointMark(a[0], a[1], "#0e1116", SEL_COLOR, 6);
+    drawPointMark(c[0], c[1], SEL_COLOR, SEL_CORE, 6);
+  });
+  ctx.restore();
+}
+function selectLine(line, opts) {
+  opts = opts || {};
+  selLine = line || 0;
+  selSource = opts.source || selSource || "editor";
+  selBlocks = blocksForLine(selLine);
+  const motion = selBlocks.filter(blockIsMotion);
+  selNoMove = !!selLine && !motion.length;
+  selPos = selNoMove ? positionAtLine(selLine) : (motion[0] ? { z: motion[0].end_z, x: motion[0].end_x, tool: motion[0].tool } : null);
+  if (!playing && !opts.keepTime) {
+    if (motion.length) {
+      const b = motion[0];
+      const dur = (b.t1 || b.t0) - b.t0;
+      currentT = b.t0 + (dur > 0 ? 0.45 * dur : 0);
+    } else if (selBlocks[0]) {
+      currentT = selBlocks[0].t0;
+    }
+  }
+  const vis = motion[0] || selBlocks[0];
+  if (followCursor && vis && !opts.skipEnsure) {
+    if (motion[0]) ensureBlockVisible(motion[0]);
+    else if (selPos) {
+      if (!pointOnScreen(selPos.z, selPos.x / 2, 24)) centerOn(selPos.z, selPos.x / 2);
+    }
+  }
+  if (opts.revealEditor && selLine) revealEditorLine(selLine, { focus: !!opts.focus });
+  if (!opts.silent) { draw(); updateReadout(); updatePickInfo(); highlightListing(blockIndexAt(currentT)); }
+  highlightEditorLine(selLine || editorHighlightLine(), !!opts.scrollEditor);
+  if (opts.scrollEditor) keepEditorLineVisible();
+  return { line: selLine, blocks: selBlocks, noMove: selNoMove, pos: selPos, source: selSource };
+}
+function selectedInfo() {
+  return {
+    line: selLine,
+    noMove: selNoMove,
+    source: selSource,
+    n: selBlocks[0] && selBlocks[0].n,
+    text: formatSelLineText(),
+    blockIds: selBlocks.map(b => b.id),
+    kinds: selBlocks.map(b => b.kind),
+    g: selBlocks.map(b => b.g),
+    pos: selPos,
+    focused: document.activeElement === ed
+  };
 }
 function setFollowCursor(on) {
   followCursor = !!on;
@@ -2881,20 +3220,26 @@ function syncCursorOnPlot(opts) {
   opts = opts || {};
   if (!sim || playing) return null;
   const line = opts.line || editorCursorLine();
-  const b = blockAtLine(line);
-  if (b) {
-    const dur = (b.t1 || b.t0) - b.t0;
-    currentT = b.t0 + (dur > 0 ? 0.45 * dur : 0);
-  }
-  if (followCursor && b) ensureBlockVisible(b);
-  if (!opts.silent) { draw(); updateReadout(); highlightListing(blockIndexAt(currentT)); }
-  highlightEditorLine(line, !!opts.scrollEditor);
-  if (opts.scrollEditor) keepEditorLineVisible();
-  return b;
+  return selectLine(line, {
+    source: opts.source || "editor",
+    silent: !!opts.silent,
+    keepTime: false,
+    revealEditor: false,
+    scrollEditor: !!opts.scrollEditor,
+    skipEnsure: !followCursor
+  });
 }
 
 ed.addEventListener("input", () => { clearTimeout(histTimer); histTimer = setTimeout(pushHist, 600); onEdited(false); });
 ed.addEventListener("scroll", syncScroll);
+ed.addEventListener("focus", () => {
+  setMirrorScroll(false);
+  try { ed.scrollTop = editorViewScroll.y; ed.scrollLeft = editorViewScroll.x; } catch (e) {}
+  syncScroll();
+});
+ed.addEventListener("blur", () => {
+  if (isCoarsePointer() && selSource === "plot") setMirrorScroll(true);
+});
 ed.addEventListener("click", () => { statusLineOverride = null; updateStatus(); syncCursorOnPlot(); });
 ed.addEventListener("keyup", () => { statusLineOverride = null; updateStatus(); syncCursorOnPlot(); });
 document.addEventListener("selectionchange", () => {
@@ -3006,6 +3351,8 @@ function runDemo() {
   if (ui.splitFrac != null) applySplitFrac(ui.splitFrac);
   followCursor = ui.followCursor !== false;
   if ($("followCursor")) $("followCursor").checked = followCursor;
+  loadGColors();
+  syncColorInputs();
   (function codeSplitDrag() {
     const el = $("codeSplit");
     if (!el) return;
@@ -3090,6 +3437,21 @@ window.__vf = {
   setT: function (t) { currentT = t; redraw(); },
   fitAll: function () { fitAll(); draw(); },
   pick: pick,
+  nearestBlockAt: nearestBlockAt,
+  selectLine: selectLine,
+  selected: selectedInfo,
+  revealEditorLine: revealEditorLine,
+  goToLine: goToLine,
+  editorViewScroll: function () { return { x: editorViewScroll.x, y: editorViewScroll.y, lh: lineH(), clientH: ed ? ed.clientHeight : 0, scrollTop: ed ? ed.scrollTop : 0, mirror: !!( $("edwrap") && $("edwrap").classList.contains("mirror-scroll") ) }; },
+  scrollEditorToLine: scrollEditorToLine,
+  goToCodeFromPick: goToCodeFromPick,
+  colorForG: colorForG,
+  colorForBlock: colorForBlock,
+  setGColor: setGColor,
+  resetGColors: resetGColors,
+  gColors: function () { return { 0: gColors[0], 1: gColors[1], 2: gColors[2], 3: gColors[3] }; },
+  defaultGColors: function () { return { 0: DEFAULT_G_COLORS[0], 1: DEFAULT_G_COLORS[1], 2: DEFAULT_G_COLORS[2], 3: DEFAULT_G_COLORS[3] }; },
+  loadGColors: loadGColors,
   zoomAt: zoomAt,
   stateAt: stateAt,
   w2s: w2s,
@@ -3152,11 +3514,16 @@ window.__vf = {
       btnOpen: box("btnOpen"), btnSave: box("btnSave"), btnPrefs: box("btnPrefs"), ed: box("ed"),
       splitter: box("splitter"), codeSplit: box("codeSplit"), readoutBox: box("readoutBox"), timeline: box("timeline"),
       saveSheet: box("saveSheet"), followCursor: box("followCursor"), tabs: tabs,
+      plotLegend: box("plotLegend"), pickInfo: box("pickInfo"), prefsSheet: box("prefsSheet"),
+      prefColors: box("prefColors"), colG00: box("colG00"), btnResetColors: box("btnResetColors"),
+      btnGoCode: box("btnGoCode"),
       followCursorOn: !!followCursor,
       splitFrac: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--split-frac")) || 0.45,
       kbOpen: $("app").classList.contains("kb-open"),
       edited: !!(ed && original && ed.value !== original),
       hasOrigSim: !!(origSim && origSim.blocks),
+      selected: selectedInfo(),
+      gColors: { 0: gColors[0], 1: gColors[1], 2: gColors[2], 3: gColors[3] },
       orientation: (window.innerWidth >= window.innerHeight) ? "landscape" : "portrait"
     };
   }
