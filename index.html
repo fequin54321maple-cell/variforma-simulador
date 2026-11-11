@@ -109,6 +109,9 @@
     --ui-font-m: calc(14px * var(--ui-scale));
     --ui-tap: calc(44px * var(--ui-scale));
     --ui-tap-lg: calc(48px * var(--ui-scale));
+    --split-frac: 0.45;
+    --split-top: 45fr;
+    --split-bot: 55fr;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
@@ -233,7 +236,7 @@
     padding: 7px 14px; border-radius: 8px; font-size: 12.5px; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 20; max-width: 80vw; }
   .toast.show { opacity: 1; }
 
-  .mob-tabs, .ro-strip, .sheet-back, .lbl-m, #pane-data { display: none; }
+  .mob-tabs, .ro-strip, .sheet-back, .lbl-m, #pane-data, .code-split { display: none; }
   label.btn { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
   .plotcol:fullscreen { width: 100vw; height: 100vh; }
 
@@ -414,8 +417,25 @@
     touch-action: manipulation;
   }
   html.layout-mobile .mob-tab.on { color: var(--text); border-top-color: var(--accent); }
+  html.layout-mobile .edbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    min-height: var(--ui-tap);
+    -webkit-overflow-scrolling: touch;
+  }
+  html.layout-mobile .edbar .btn,
+  html.layout-mobile .edbar label.chk { flex: none; white-space: nowrap; }
   html.layout-mobile .edbar .btn { min-height: var(--ui-tap); padding: 8px 12px; font-size: var(--ui-font-m); }
   html.layout-mobile .edbar label.chk { font-size: var(--ui-font-m); min-height: var(--ui-tap); }
+  html.layout-mobile .edstatus {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    overflow-x: auto;
+  }
+  @media (orientation: landscape) and (max-height: 430px) {
+    html.layout-mobile .app.mob-editor .edstatus { display: none; }
+  }
   html.layout-mobile .gutter, html.layout-mobile .backdrop { display: none; }
   html.layout-mobile .edwrap { font-size: calc(16px * var(--ui-scale)); line-height: var(--lh); }
   html.layout-mobile #ed {
@@ -431,12 +451,106 @@
   html.layout-mobile .lintbar, html.layout-mobile .edstatus, html.layout-mobile .notes { font-size: var(--ui-font-m); }
   html.layout-mobile .toast { grid-area: stage; bottom: calc(var(--ui-tap-lg) + var(--ui-tap) + 32px + var(--sab)); font-size: var(--ui-font-m); }
   html.layout-mobile .sheet-back { grid-area: stage; }
+  /* Código en móvil: gráfica + editor a la vez, divisor arrastrable. */
+  html.layout-mobile .app.mob-editor {
+    grid-template-areas: "hdr" "stage" "split" "editor" "ctrl" "tabs";
+    grid-template-columns: 1fr;
+    grid-template-rows:
+      auto
+      minmax(88px, var(--split-top))
+      11px
+      minmax(72px, var(--split-bot))
+      auto auto;
+  }
+  html.layout-mobile .app.mob-editor .side {
+    display: flex;
+    grid-area: editor;
+    z-index: 5;
+  }
+  html.layout-mobile .code-split { display: none; }
+  html.layout-mobile .app.mob-editor .code-split {
+    display: block;
+    grid-area: split;
+    position: relative;
+    z-index: 7;
+    background: var(--bg2);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    cursor: row-resize;
+    touch-action: none;
+    height: 11px;
+    min-height: 11px;
+  }
+  html.layout-mobile .app.mob-editor .code-split::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; top: -10px; bottom: -10px;
+  }
+  html.layout-mobile .app.mob-editor .code-split::after {
+    content: "";
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 40px; height: 4px;
+    transform: translate(-50%, -50%);
+    background: #5b6a80;
+    border-radius: 99px;
+  }
+  html.layout-mobile .app.mob-editor .code-split.drag,
+  html.layout-mobile .app.mob-editor .code-split:hover { background: #1f3a5a; }
+
   html.layout-mobile .app.kb-open {
     grid-template-areas: "hdr" "stage";
     grid-template-rows: auto minmax(0, 1fr);
   }
   html.layout-mobile .app.kb-open .controls,
   html.layout-mobile .app.kb-open .mob-tabs { display: none; }
+  html.layout-mobile .app.mob-editor.kb-open {
+    grid-template-areas: "hdr" "stage" "split" "editor";
+    grid-template-rows:
+      auto
+      minmax(72px, var(--split-top))
+      11px
+      minmax(64px, var(--split-bot));
+  }
+
+  @media (orientation: landscape) {
+    html.layout-mobile .app.mob-editor {
+      grid-template-columns:
+        minmax(120px, var(--split-top))
+        11px
+        minmax(160px, var(--split-bot));
+      grid-template-rows: auto minmax(0, 1fr) auto auto;
+      grid-template-areas:
+        "hdr hdr hdr"
+        "stage split editor"
+        "ctrl ctrl ctrl"
+        "tabs tabs tabs";
+    }
+    html.layout-mobile .app.mob-editor .code-split {
+      cursor: col-resize;
+      width: 11px;
+      height: auto;
+      min-height: 0;
+      border-top: 0;
+      border-bottom: 0;
+      border-left: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+    }
+    html.layout-mobile .app.mob-editor .code-split::before {
+      top: 0; bottom: 0; left: -10px; right: -10px;
+    }
+    html.layout-mobile .app.mob-editor .code-split::after {
+      width: 4px; height: 40px;
+    }
+    html.layout-mobile .app.mob-editor.kb-open {
+      grid-template-columns:
+        minmax(100px, var(--split-top))
+        11px
+        minmax(140px, var(--split-bot));
+      grid-template-rows: auto minmax(0, 1fr);
+      grid-template-areas: "hdr hdr hdr" "stage split editor";
+    }
+  }
   html.layout-mobile .app.mob-data #pane-data { display: flex; }
   html.layout-mobile .app.mob-data #pane-editor,
   html.layout-mobile .app.mob-data #pane-lint,
@@ -585,6 +699,7 @@
       </div>
       <div class="pane on" id="pane-editor">
         <div class="edbar">
+          <label class="chk follow-cur" title="La gráfica sigue la línea del cursor y acerca el tramo si queda fuera de la vista"><input type="checkbox" id="followCursor" checked> Seguir cursor</label>
           <button class="btn" id="btnUndo" type="button" title="Deshacer (Ctrl+Z)">↶ Deshacer</button>
           <button class="btn" id="btnRedo" type="button" title="Rehacer (Ctrl+Y / Ctrl+Mayús+Z)">↷ Rehacer</button>
           <button class="btn" id="btnRenum" type="button" title="Renumerar N0010, paso 10, conservando el prefijo /">Renumerar N</button>
@@ -648,6 +763,7 @@
       </div>
     </aside>
   </div>
+  <div class="code-split" id="codeSplit" role="separator" aria-orientation="horizontal" aria-label="Ajustar gráfica y editor"></div>
   <nav class="mob-tabs" id="mobTabs" aria-label="Secciones">
     <button type="button" class="mob-tab on" data-mob="plot" aria-current="page">Gráfica</button>
     <button type="button" class="mob-tab" data-mob="editor">Código</button>
@@ -1505,7 +1621,7 @@ const LH_DESK = 18, PAD_L = 54, PAD_B = 26;
 let sim = null, currentT = 0, playing = false, lastTs = 0;
 let view = { cz: 0, cr: 0, s: 1, ready: false };
 let lastSize = { w: 0, h: 0 };
-let boxTool = false, follow = false, drag = null, hover = null;
+let boxTool = false, follow = false, followCursor = true, origSim = null, drag = null, hover = null;
 let pointers = new Map(), pinch = null, lastTap = null, tapTimer = 0;
 let pendingSave = null, layoutMq = null;
 function isMobileLayout() {
@@ -1565,6 +1681,36 @@ function simOpts(skip) {
   };
 }
 
+function refreshOrigSim() {
+  try {
+    const skip = $("skipBD") ? $("skipBD").checked : false;
+    if (!original) { origSim = null; return; }
+    if (isPreloadedFile && PRELOADED && PRELOADED.blocks && !skip && PRELOADED.skipBlockDelete === false) {
+      origSim = JSON.parse(JSON.stringify(PRELOADED));
+    } else {
+      origSim = simulate(original, simOpts(skip));
+    }
+  } catch (e) { origSim = null; }
+}
+function blockGeomKey(b) {
+  if (!b) return "";
+  const rnd = (n) => (n == null || Number.isNaN(n)) ? "" : Math.round(Number(n) * 1000) / 1000;
+  return [b.kind, b.g, b.tool, rnd(b.start_x), rnd(b.start_z), rnd(b.end_x), rnd(b.end_z)].join("|");
+}
+function origBlockMap() {
+  const m = new Map();
+  if (origSim && origSim.blocks) origSim.blocks.forEach(b => { if (b.line != null) m.set(b.line, b); });
+  return m;
+}
+function isChangedBlock(b, origMap) {
+  if (!b) return false;
+  const st = diffInfo && diffInfo.status && b.line ? diffInfo.status[b.line - 1] : "";
+  if (st === "add" || st === "mod") return true;
+  const ob = origMap && origMap.get(b.line);
+  if (!ob) return !!(ed && original && ed.value !== original);
+  return blockGeomKey(b) !== blockGeomKey(ob);
+}
+
 function reparse(opts) {
   opts = opts || {};
   clearTimeout(reparseTimer);
@@ -1597,6 +1743,7 @@ function reparse(opts) {
   firstLoad = false;
   renderDecor();
   renderLintList();
+  if (!fit && followCursor) syncCursorOnPlot({ silent: false, scrollEditor: false });
 }
 
 function loadSim(s, o) {
@@ -1763,6 +1910,7 @@ function openProgram(text, name, preloaded) {
   resetHist();
   ed.scrollTop = 0;
   firstLoad = true;
+  refreshOrigSim();
   reparse({ fit: true, resetTime: true });
   autosaveState = saved ? "recuperado" : "sin cambios";
   updateStatus();
@@ -2169,11 +2317,21 @@ function draw() {
     const [zA] = s2w(PAD_L, 0), [zB] = s2w(w, 0);
     drawPolyline([[zA, 0], [zB, 0]], "#4b5563", 1, [2, 4], 0.8);
     const idx = blockIndexAt(currentT);
+    const edited = !!(ed && original && ed.value !== original && origSim);
+    const omap = edited ? origBlockMap() : null;
+    if (edited && origSim.blocks) {
+      origSim.blocks.forEach(b => {
+        if (!b.points || b.points.length < 2) return;
+        drawPolyline(b.points, "#93a0b3", 1.35, [5, 5], 0.28);
+      });
+    }
     sim.blocks.forEach((b, i) => {
       if (!b.points || b.points.length < 2) return;
       const rapid = b.g === 0 || b.kind === "g30" || b.kind === "g28";
       const cur = i === idx, past = i < idx;
-      drawPolyline(b.points, colorForTool(b.tool), cur ? 2.8 : rapid ? 1.1 : 1.8, rapid ? [7, 5] : [], cur ? 1 : past ? 0.88 : 0.38);
+      const changed = edited && isChangedBlock(b, omap);
+      if (changed) drawPolyline(b.points, "#fbbf24", cur ? 5.4 : 4.2, [], cur ? 0.9 : 0.55);
+      drawPolyline(b.points, changed && !cur ? "#fde68a" : colorForTool(b.tool), cur ? 2.8 : rapid ? 1.1 : 1.8, rapid && !changed ? [7, 5] : [], cur ? 1 : past ? 0.88 : 0.38);
     });
     sim.blocks.forEach(b => {
       const lv = (b.lint || []).some(i => i.level === "error") ? "e" : (b.lint || []).some(i => i.level === "warning") ? "w" : "";
@@ -2394,7 +2552,10 @@ function setMobTab(name) {
     highlightListing(blockIndexAt(currentT));
     if ($("dataScroll")) $("dataScroll").scrollTop = 0;
   }
-  if (name === "plot" || prev === "plot") requestAnimationFrame(resize);
+  requestAnimationFrame(() => {
+    resize();
+    if (name === "editor") syncCursorOnPlot({ scrollEditor: true });
+  });
 }
 function syncCheckboxes() {
   if ($("skipBDMob")) $("skipBDMob").checked = $("skipBD").checked;
@@ -2498,6 +2659,35 @@ function onVisualViewport() {
   const kb = isMobileLayout() && vv && ((window.innerHeight - vv.height) > 80);
   $("app").classList.toggle("kb-open", kb);
   resize();
+  if (kb && isMobileLayout() && $("app").dataset.mobTab === "editor") {
+    requestAnimationFrame(() => { keepEditorLineVisible(); resize(); });
+  }
+}
+function applySplitFrac(f) {
+  f = Math.max(0.22, Math.min(0.72, Number(f) || 0.45));
+  const st = document.documentElement.style;
+  st.setProperty("--split-frac", String(f));
+  st.setProperty("--split-top", (f * 100) + "fr");
+  st.setProperty("--split-bot", ((1 - f) * 100) + "fr");
+  saveUi({ splitFrac: f });
+  return f;
+}
+function simulateKeyboard(open, visH) {
+  const app = $("app");
+  if (!open) {
+    app.classList.remove("kb-open");
+    setViewportVars();
+    requestAnimationFrame(() => { resize(); });
+    return { open: false, appH: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--app-h")) || window.innerHeight };
+  }
+  const h = visH || Math.round((window.innerHeight || 800) * 0.52);
+  const st = document.documentElement.style;
+  st.setProperty("--vh", (h * 0.01) + "px");
+  st.setProperty("--app-h", h + "px");
+  st.setProperty("--vv-h", h + "px");
+  app.classList.add("kb-open");
+  requestAnimationFrame(() => { keepEditorLineVisible(); resize(); });
+  return { open: true, appH: h };
 }
 function syncLayout() {
   setViewportVars();
@@ -2599,9 +2789,9 @@ $("zFlange").addEventListener("click", zoomFlange);
 $("zFollow").addEventListener("click", () => { follow = !follow; $("zFollow").classList.toggle("on", follow); redraw(); });
 $("zFull").addEventListener("click", toggleFull);
 $("showDisc").addEventListener("change", () => { syncCheckboxes(); draw(); });
-$("skipBD").addEventListener("change", () => { syncCheckboxes(); reparse(); });
+$("skipBD").addEventListener("change", () => { syncCheckboxes(); refreshOrigSim(); reparse(); });
 if ($("showDiscMob")) $("showDiscMob").addEventListener("change", () => { $("showDisc").checked = $("showDiscMob").checked; draw(); });
-if ($("skipBDMob")) $("skipBDMob").addEventListener("change", () => { $("skipBD").checked = $("skipBDMob").checked; reparse(); });
+if ($("skipBDMob")) $("skipBDMob").addEventListener("change", () => { $("skipBD").checked = $("skipBDMob").checked; refreshOrigSim(); reparse(); });
 $("showInfo").addEventListener("change", renderLintList);
 function onLintClick(e) {
   const li = e.target.closest(".li"); if (!li || !li.dataset.line) return;
@@ -2625,15 +2815,100 @@ $("listing").addEventListener("click", onBlockClick);
 if ($("dataDiff")) $("dataDiff").addEventListener("click", onDiffClick);
 if ($("dataListing")) $("dataListing").addEventListener("click", onBlockClick);
 function jumpToLine(line) {
-  if (!sim || playing) return;
-  const b = sim.blocks.find(x => x.line === line);
-  if (b) { currentT = b.t0; redraw(); }
+  syncCursorOnPlot({ line: line, silent: false, scrollEditor: false });
+}
+function editorCursorLine() {
+  if (typeof statusLineOverride === "number" && statusLineOverride > 0) return statusLineOverride;
+  return lineOfOffset((ed && ed.selectionStart) || 0);
+}
+function blockAtLine(line) {
+  if (!sim || !line) return null;
+  let found = null;
+  for (let i = 0; i < sim.blocks.length; i++) {
+    const b = sim.blocks[i];
+    if (b.line === line) return b;
+    if (b.line != null && b.line <= line) found = b;
+  }
+  return found;
+}
+function pointOnScreen(z, r, margin) {
+  margin = margin == null ? 16 : margin;
+  const p = w2s(z, r);
+  return p[0] >= PAD_L + margin && p[0] <= cw() - margin && p[1] >= margin && p[1] <= chh() - PAD_B - margin;
+}
+function ensureBlockVisible(b) {
+  if (!b || !view.ready || cw() < 8 || chh() < 8) return false;
+  const pts = (b.points && b.points.length) ? b.points : null;
+  if (!pts || pts.length < 1) {
+    if (b.end_z == null || b.end_x == null) return false;
+    if (!pointOnScreen(b.end_z, b.end_x / 2, 24)) { centerOn(b.end_z, b.end_x / 2); return true; }
+    return false;
+  }
+  let zmin = Infinity, zmax = -Infinity, rmin = Infinity, rmax = -Infinity, anyOff = false;
+  for (let i = 0; i < pts.length; i++) {
+    const z = pts[i][0], r = pts[i][1] / 2;
+    zmin = Math.min(zmin, z); zmax = Math.max(zmax, z);
+    rmin = Math.min(rmin, r); rmax = Math.max(rmax, r);
+    if (!pointOnScreen(z, r, 20)) anyOff = true;
+  }
+  if (!anyOff) return false;
+  const pad = 28;
+  const vw = Math.max(40, cw() - PAD_L - 2 * pad), vh = Math.max(40, chh() - PAD_B - 2 * pad);
+  const dz = Math.max(Math.abs(zmax - zmin), 1e-3), dr = Math.max(Math.abs(rmax - rmin), 1e-3);
+  const needS = Math.min(vw / dz, vh / dr);
+  if (view.s <= needS * 1.05) centerOn((zmin + zmax) / 2, (rmin + rmax) / 2);
+  else fitBox(zmin, zmax, rmin, rmax, pad);
+  return true;
+}
+function keepEditorLineVisible() {
+  if (!ed) return;
+  const line = editorCursorLine();
+  const lh = lineH();
+  const top = (line - 1) * lh;
+  const vis0 = ed.scrollTop, vis1 = vis0 + Math.max(0, ed.clientHeight - 2 * lh);
+  if (top < vis0 || top > vis1) {
+    ed.scrollTop = Math.max(0, top - Math.max(24, ed.clientHeight * 0.25));
+    syncScroll();
+  }
+}
+function setFollowCursor(on) {
+  followCursor = !!on;
+  const el = $("followCursor");
+  if (el) el.checked = followCursor;
+  saveUi({ followCursor: followCursor });
+}
+function syncCursorOnPlot(opts) {
+  opts = opts || {};
+  if (!sim || playing) return null;
+  const line = opts.line || editorCursorLine();
+  const b = blockAtLine(line);
+  if (b) {
+    const dur = (b.t1 || b.t0) - b.t0;
+    currentT = b.t0 + (dur > 0 ? 0.45 * dur : 0);
+  }
+  if (followCursor && b) ensureBlockVisible(b);
+  if (!opts.silent) { draw(); updateReadout(); highlightListing(blockIndexAt(currentT)); }
+  highlightEditorLine(line, !!opts.scrollEditor);
+  if (opts.scrollEditor) keepEditorLineVisible();
+  return b;
 }
 
 ed.addEventListener("input", () => { clearTimeout(histTimer); histTimer = setTimeout(pushHist, 600); onEdited(false); });
 ed.addEventListener("scroll", syncScroll);
-ed.addEventListener("click", () => { statusLineOverride = null; updateStatus(); jumpToLine(lineOfOffset(ed.selectionStart)); });
-ed.addEventListener("keyup", () => { statusLineOverride = null; updateStatus(); });
+ed.addEventListener("click", () => { statusLineOverride = null; updateStatus(); syncCursorOnPlot(); });
+ed.addEventListener("keyup", () => { statusLineOverride = null; updateStatus(); syncCursorOnPlot(); });
+document.addEventListener("selectionchange", () => {
+  if (document.activeElement !== ed) return;
+  statusLineOverride = null;
+  updateStatus();
+  syncCursorOnPlot();
+});
+if ($("followCursor")) {
+  $("followCursor").addEventListener("change", () => {
+    setFollowCursor($("followCursor").checked);
+    if (followCursor) syncCursorOnPlot({ scrollEditor: false });
+  });
+}
 ed.addEventListener("keydown", e => {
   const mod = e.ctrlKey || e.metaKey;
   if (mod && !e.shiftKey && (e.key === "z" || e.key === "Z")) { e.preventDefault(); undo(); }
@@ -2728,6 +3003,44 @@ function runDemo() {
 (function init() {
   const ui = uiState();
   if (ui.sideW) $("side").style.width = ui.sideW;
+  if (ui.splitFrac != null) applySplitFrac(ui.splitFrac);
+  followCursor = ui.followCursor !== false;
+  if ($("followCursor")) $("followCursor").checked = followCursor;
+  (function codeSplitDrag() {
+    const el = $("codeSplit");
+    if (!el) return;
+    let dragging = false;
+    function fracFromEvent(e) {
+      const app = $("app");
+      const hdr = app.querySelector("header");
+      const ctrl = $("controls");
+      const ar = app.getBoundingClientRect();
+      const top = hdr ? hdr.getBoundingClientRect().bottom : ar.top;
+      const kb = app.classList.contains("kb-open");
+      const bottom = (!kb && ctrl && getComputedStyle(ctrl).display !== "none")
+        ? ctrl.getBoundingClientRect().top
+        : ar.bottom;
+      const land = window.matchMedia("(orientation: landscape)").matches;
+      const x = e.clientX, y = e.clientY;
+      if (land) return (x - ar.left) / Math.max(1, ar.width);
+      return (y - top) / Math.max(1, bottom - top);
+    }
+    el.addEventListener("pointerdown", e => {
+      if (!isMobileLayout() || $("app").dataset.mobTab !== "editor") return;
+      dragging = true;
+      el.classList.add("drag");
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
+      e.preventDefault();
+    });
+    el.addEventListener("pointermove", e => {
+      if (!dragging) return;
+      applySplitFrac(fracFromEvent(e));
+      resize();
+    });
+    const up = () => { if (!dragging) return; dragging = false; el.classList.remove("drag"); requestAnimationFrame(resize); };
+    el.addEventListener("pointerup", up);
+    el.addEventListener("pointercancel", up);
+  })();
   syncLayout();
   if (!isMobileLayout() && ui.panel === false) showPanel(false);
   try {
@@ -2760,6 +3073,18 @@ window.__vf = {
   openPrefs: openPrefs,
   closePrefs: closePrefs,
   setViewportVars: setViewportVars,
+  applySplitFrac: applySplitFrac,
+  simulateKeyboard: simulateKeyboard,
+  setFollowCursor: setFollowCursor,
+  syncCursorOnPlot: syncCursorOnPlot,
+  keepEditorLineVisible: keepEditorLineVisible,
+  refreshOrigSim: refreshOrigSim,
+  isChangedBlock: function (b) { return isChangedBlock(b, origBlockMap()); },
+  origSim: function () { return origSim; },
+  followCursor: function () { return followCursor; },
+  reparse: reparse,
+  setEditorText: setEditorText,
+  editorCursorLine: editorCursorLine,
   getView: function () { return { cz: view.cz, cr: view.cr, s: view.s, ready: view.ready, w: cw(), h: chh() }; },
   currentT: function () { return currentT; },
   setT: function (t) { currentT = t; redraw(); },
@@ -2825,8 +3150,14 @@ window.__vf = {
       controls: box("controls"), roStrip: box("roStrip"), side: box("side"), stage: box("stage"),
       btnPlay: box("btnPlay"), btnPrev: box("btnPrev"), btnNext: box("btnNext"),
       btnOpen: box("btnOpen"), btnSave: box("btnSave"), btnPrefs: box("btnPrefs"), ed: box("ed"),
-      splitter: box("splitter"), readoutBox: box("readoutBox"), timeline: box("timeline"),
-      saveSheet: box("saveSheet"), tabs: tabs
+      splitter: box("splitter"), codeSplit: box("codeSplit"), readoutBox: box("readoutBox"), timeline: box("timeline"),
+      saveSheet: box("saveSheet"), followCursor: box("followCursor"), tabs: tabs,
+      followCursorOn: !!followCursor,
+      splitFrac: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--split-frac")) || 0.45,
+      kbOpen: $("app").classList.contains("kb-open"),
+      edited: !!(ed && original && ed.value !== original),
+      hasOrigSim: !!(origSim && origSim.blocks),
+      orientation: (window.innerWidth >= window.innerHeight) ? "landscape" : "portrait"
     };
   }
 };
