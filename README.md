@@ -12,6 +12,8 @@ Abre la aplicación publicada en GitHub Pages:
 - En iPhone / iPad (Safari): botón Compartir → **Añadir a pantalla de inicio**.
 - En el ordenador: Instalar desde la barra de direcciones o el botón de la app.
 
+En el teléfono, el engranaje (⚙) o la pestaña Datos permiten elegir **Tamaño: Auto / Chico / Normal / Grande** y **Modo: Auto / Vertical / Horizontal**. Las barras inferiores permanecen visibles en retrato y apaisado.
+
 Puedes abrir tus propios archivos `.NCD` / `.nc` desde la biblioteca, el selector de archivos o, en Android, compartiendo el archivo hacia la app. Incluye un ejemplo de demostración generado (Copa O9000). No se publican programas reales de máquina.
 
 La app funciona sin red después de la primera visita (service worker con caché). Si sale una versión nueva, aparece un aviso para actualizar.

@@ -20,6 +20,30 @@
 
 <script>
 (function () {
+  var LS = "variforma-sim-ui";
+  function readUi() {
+    try { return JSON.parse(localStorage.getItem(LS) || "{}"); } catch (e) { return {}; }
+  }
+  function setViewportVars() {
+    var vv = window.visualViewport;
+    var h = (vv && vv.height) || window.innerHeight || document.documentElement.clientHeight || 0;
+    var off = (vv && vv.offsetTop) || 0;
+    if (!h) return;
+    var st = document.documentElement.style;
+    st.setProperty("--vh", (h * 0.01) + "px");
+    st.setProperty("--app-h", h + "px");
+    st.setProperty("--vv-h", h + "px");
+    st.setProperty("--vv-off", off + "px");
+  }
+  function scaleFor(mode) {
+    if (mode === "chico") return 0.85;
+    if (mode === "grande") return 1.18;
+    if (mode === "normal") return 1;
+    var h = (window.visualViewport && window.visualViewport.height) || window.innerHeight || 800;
+    var w = (window.visualViewport && window.visualViewport.width) || window.innerWidth || 800;
+    if (h >= w && h < 500) return 0.85;
+    return 1;
+  }
   function wantMobile() {
     try {
       var h = location.hash || "";
@@ -27,13 +51,43 @@
       if (m && m[1].split(",").indexOf("mobile") >= 0) return true;
       if (/(?:^|[?&#])force-mobile(?:&|=|$)/.test(h + (location.search || ""))) return true;
     } catch (e) {}
-    try { return window.matchMedia("(max-width: 820px), (pointer: coarse)").matches; }
-    catch (e2) { return Math.min(screen.width, document.documentElement.clientWidth || 9999) <= 820; }
+    var mode = (readUi().layoutMode || "auto");
+    if (mode === "vertical") return true;
+    if (mode === "horizontal") return false;
+    try {
+      if (window.matchMedia("(pointer: coarse)").matches) return true;
+      if (window.matchMedia("(hover: none) and (max-width: 1024px)").matches) return true;
+      if (window.matchMedia("(max-width: 820px)").matches) return true;
+      var standalone = window.matchMedia("(display-mode: standalone)").matches
+        || window.navigator.standalone === true;
+      var w = Math.min(window.innerWidth || 9999, document.documentElement.clientWidth || 9999);
+      if (standalone && w <= 1024) return true;
+      if (window.matchMedia("(orientation: portrait) and (max-width: 1024px)").matches) return true;
+    } catch (e2) {
+      return Math.min(screen.width, document.documentElement.clientWidth || 9999) <= 820;
+    }
+    return false;
   }
-  function apply() { document.documentElement.classList.toggle("layout-mobile", wantMobile()); }
+  function apply() {
+    setViewportVars();
+    var ui = readUi();
+    var mode = ui.uiScale || "auto";
+    document.documentElement.style.setProperty("--ui-scale", String(scaleFor(mode)));
+    document.documentElement.setAttribute("data-ui-scale", mode);
+    document.documentElement.setAttribute("data-layout-mode", ui.layoutMode || "auto");
+    document.documentElement.classList.toggle("layout-mobile", wantMobile());
+  }
   apply();
-  try { window.matchMedia("(max-width: 820px), (pointer: coarse)").addEventListener("change", apply); }
-  catch (e) {}
+  try {
+    window.matchMedia("(max-width: 820px)").addEventListener("change", apply);
+    window.matchMedia("(pointer: coarse)").addEventListener("change", apply);
+    window.matchMedia("(orientation: portrait)").addEventListener("change", apply);
+  } catch (e) {}
+  window.addEventListener("resize", apply);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", apply);
+    window.visualViewport.addEventListener("scroll", apply);
+  }
 })();
 </script>
 <title>Simulador de trayectorias Variforma</title>
@@ -42,6 +96,19 @@
     --bg: #0e1116; --bg2: #161b24; --bg3: #1c2330; --line: #2a3340;
     --text: #e8edf4; --muted: #93a0b3; --accent: #3b9eff; --flange: #ff8c42;
     --warn: #ffc107; --err: #ff5a5a; --ok: #34d399; --lh: 18px;
+    --ui-scale: 1;
+    --vh: 1vh;
+    --app-h: 100%;
+    --vv-h: 100%;
+    --vv-off: 0px;
+    --emu-sat: 0px; --emu-sab: 0px; --emu-sal: 0px; --emu-sar: 0px;
+    --sat: max(env(safe-area-inset-top, 0px), var(--emu-sat));
+    --sab: max(env(safe-area-inset-bottom, 0px), var(--emu-sab));
+    --sal: max(env(safe-area-inset-left, 0px), var(--emu-sal));
+    --sar: max(env(safe-area-inset-right, 0px), var(--emu-sar));
+    --ui-font-m: calc(14px * var(--ui-scale));
+    --ui-tap: calc(44px * var(--ui-scale));
+    --ui-tap-lg: calc(48px * var(--ui-scale));
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
@@ -170,27 +237,42 @@
   label.btn { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
   .plotcol:fullscreen { width: 100vw; height: 100vh; }
 
-  /* ---- Layout móvil (clase puesta por el script del <head>, ≤820px o puntero grueso) ---- */
+  /* ---- Layout móvil (clase puesta por el script del <head>, ≤820px, puntero grueso, standalone o modo Vertical) ---- */
   html.layout-mobile {
-    --lh: 22px;
+    --lh: calc(22px * var(--ui-scale));
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
   }
+  /* height: no usar inset:0 a la vez que 100dvh/--app-h; en iOS bottom:0 ignora height y recorta las barras. */
   html.layout-mobile, html.layout-mobile body {
-    font-size: 14px;
+    font-size: var(--ui-font-m);
     overflow: hidden;
     overscroll-behavior: none;
+    width: 100%;
+    max-width: 100%;
+    min-height: 0;
     height: 100%;
+    height: 100svh;
     height: 100dvh;
-    height: var(--vv-h, 100dvh);
+    height: calc(var(--vh, 1vh) * 100);
+    height: var(--app-h, 100dvh);
   }
-  html.layout-mobile body { position: fixed; inset: 0; width: 100%; max-width: 100%; top: var(--vv-off, 0); }
+  html.layout-mobile body {
+    position: fixed;
+    top: var(--vv-off, 0px);
+    left: 0;
+    right: 0;
+    bottom: auto;
+    width: 100%;
+    max-width: 100%;
+  }
   html.layout-mobile .app {
     display: grid;
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr auto auto;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
     grid-template-areas: "hdr" "stage" "ctrl" "tabs";
     height: 100%;
+    max-height: 100%;
     width: 100%;
     max-width: 100%;
     overflow: hidden;
@@ -199,24 +281,27 @@
   html.layout-mobile header {
     grid-area: hdr;
     padding: 6px 10px;
-    padding-top: max(6px, env(safe-area-inset-top));
-    padding-left: max(10px, env(safe-area-inset-left));
-    padding-right: max(10px, env(safe-area-inset-right));
+    padding-top: max(6px, var(--sat));
+    padding-left: max(10px, var(--sal));
+    padding-right: max(10px, var(--sar));
     gap: 8px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    align-items: center;
+    min-height: 0;
+    z-index: 8;
   }
-  html.layout-mobile header h1 { font-size: 14px; }
+  html.layout-mobile header h1 { font-size: var(--ui-font-m); }
   html.layout-mobile .hdr-full { display: none; }
   html.layout-mobile .fname {
-    font-size: 14px; max-width: 46vw; overflow: hidden;
+    font-size: var(--ui-font-m); max-width: 28vw; overflow: hidden;
     text-overflow: ellipsis; white-space: nowrap;
   }
   html.layout-mobile .dropbar,
   html.layout-mobile #btnPanel,
   html.layout-mobile header .chk { display: none; }
-  html.layout-mobile .hdr-actions { margin-left: 0; gap: 8px; }
+  html.layout-mobile .hdr-actions { margin-left: auto; gap: 8px; flex-wrap: nowrap; flex: none; }
   html.layout-mobile .btn, html.layout-mobile label.btn {
-    min-height: 44px; min-width: 44px; padding: 8px 12px; font-size: 14px;
+    min-height: var(--ui-tap); min-width: var(--ui-tap); padding: 8px 12px; font-size: var(--ui-font-m);
     touch-action: manipulation;
   }
   html.layout-mobile .main,
@@ -246,28 +331,33 @@
   html.layout-mobile .ro-strip {
     display: flex;
     position: absolute; top: 0; left: 0; right: 0;
-    z-index: 4; height: 44px; min-height: 44px;
+    z-index: 4; height: var(--ui-tap); min-height: var(--ui-tap);
     align-items: center; justify-content: space-around;
     gap: 4px; padding: 0 8px;
     background: rgba(16,20,28,.92);
     border-bottom: 1px solid var(--line);
     font-variant-numeric: tabular-nums;
-    font-size: 14px;
+    font-size: var(--ui-font-m);
     overflow: hidden;
   }
   html.layout-mobile .ro-strip span { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; min-width: 0; }
-  html.layout-mobile .ro-strip i { font-style: normal; color: var(--muted); font-size: 14px; text-transform: uppercase; letter-spacing: .04em; }
+  html.layout-mobile .ro-strip i { font-style: normal; color: var(--muted); font-size: var(--ui-font-m); text-transform: uppercase; letter-spacing: .04em; }
   html.layout-mobile .ro-strip b { font-weight: 650; }
   html.layout-mobile .tools {
-    top: 50px; right: 4px; left: 4px;
-    max-width: none;
-    overflow: hidden; flex-wrap: wrap;
-    justify-content: flex-end;
+    top: 0; right: 0; left: auto;
+    max-width: 52%;
+    height: var(--ui-tap); max-height: var(--ui-tap);
+    overflow-x: auto; overflow-y: hidden;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
     gap: 6px;
+    background: rgba(16,20,28,.92);
+    padding: 0 4px;
+    -webkit-overflow-scrolling: touch;
   }
   html.layout-mobile .tbtn {
-    min-width: 44px; min-height: 44px; padding: 8px 10px;
-    font-size: 14px; white-space: nowrap; flex: none;
+    min-width: var(--ui-tap); min-height: var(--ui-tap); padding: 8px 10px;
+    font-size: var(--ui-font-m); white-space: nowrap; flex: none;
     touch-action: manipulation;
   }
   html.layout-mobile .lbl-d { display: none; }
@@ -275,28 +365,32 @@
   html.layout-mobile .controls {
     grid-area: ctrl;
     display: grid;
-    grid-template-columns: 48px 48px 48px 1fr;
-    grid-template-rows: 48px auto;
+    grid-template-columns: var(--ui-tap-lg) var(--ui-tap-lg) var(--ui-tap-lg) 1fr;
+    grid-template-rows: var(--ui-tap-lg) auto;
     align-items: center;
     gap: 6px 8px;
     padding: 8px 10px;
-    padding-left: max(10px, env(safe-area-inset-left));
-    padding-right: max(10px, env(safe-area-inset-right));
+    padding-left: max(10px, var(--sal));
+    padding-right: max(10px, var(--sar));
+    z-index: 8;
+    flex: none;
+    min-height: 0;
+    position: relative;
   }
   html.layout-mobile .icon-btn {
-    width: 48px; height: 48px; min-width: 44px; min-height: 44px;
-    font-size: 18px; padding: 0;
+    width: var(--ui-tap-lg); height: var(--ui-tap-lg); min-width: var(--ui-tap); min-height: var(--ui-tap);
+    font-size: calc(18px * var(--ui-scale)); padding: 0;
   }
   html.layout-mobile #timeline {
     grid-column: 4; grid-row: 1;
-    width: 100%; min-width: 0; height: 32px; margin: 0;
+    width: 100%; min-width: 0; height: calc(32px * var(--ui-scale)); margin: 0;
   }
-  html.layout-mobile .time { min-width: 0; font-size: 14px; grid-column: 1 / 3; grid-row: 2; }
+  html.layout-mobile .time { min-width: 0; font-size: var(--ui-font-m); grid-column: 1 / 3; grid-row: 2; }
   html.layout-mobile .controls .chk-speed {
-    grid-column: 3 / -1; grid-row: 2; justify-self: end; font-size: 14px;
+    grid-column: 3 / -1; grid-row: 2; justify-self: end; font-size: var(--ui-font-m);
   }
   html.layout-mobile select#speed {
-    min-height: 44px; padding: 6px 8px; font-size: 14px;
+    min-height: var(--ui-tap); padding: 6px 8px; font-size: var(--ui-font-m);
   }
   html.layout-mobile #legend { display: none; }
   html.layout-mobile .mob-tabs {
@@ -305,38 +399,41 @@
     flex: none;
     border-top: 1px solid var(--line);
     background: var(--bg2);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
+    padding-bottom: var(--sab);
+    padding-left: var(--sal);
+    padding-right: var(--sar);
+    z-index: 8;
+    min-height: 0;
+    position: relative;
   }
   html.layout-mobile .mob-tab {
-    flex: 1; min-height: 44px; min-width: 44px;
+    flex: 1; min-height: var(--ui-tap); min-width: var(--ui-tap);
     border: 0; background: none; color: var(--muted);
-    font-size: 14px; padding: 8px 4px;
+    font-size: var(--ui-font-m); padding: 8px 4px;
     border-top: 2px solid transparent;
     touch-action: manipulation;
   }
   html.layout-mobile .mob-tab.on { color: var(--text); border-top-color: var(--accent); }
-  html.layout-mobile .edbar .btn { min-height: 44px; padding: 8px 12px; font-size: 14px; }
-  html.layout-mobile .edbar label.chk { font-size: 14px; min-height: 44px; }
+  html.layout-mobile .edbar .btn { min-height: var(--ui-tap); padding: 8px 12px; font-size: var(--ui-font-m); }
+  html.layout-mobile .edbar label.chk { font-size: var(--ui-font-m); min-height: var(--ui-tap); }
   html.layout-mobile .gutter, html.layout-mobile .backdrop { display: none; }
-  html.layout-mobile .edwrap { font-size: 16px; line-height: var(--lh); }
+  html.layout-mobile .edwrap { font-size: calc(16px * var(--ui-scale)); line-height: var(--lh); }
   html.layout-mobile #ed {
     left: 0; width: 100%;
     background: #0f141b;
-    font-size: 16px; line-height: var(--lh);
+    font-size: calc(16px * var(--ui-scale)); line-height: var(--lh);
     white-space: pre; overflow: auto;
     -webkit-text-size-adjust: 100%;
   }
   html.layout-mobile .li, html.layout-mobile .hunk, html.layout-mobile .blk {
-    min-height: 44px; padding-top: 10px; padding-bottom: 10px; font-size: 14px;
+    min-height: var(--ui-tap); padding-top: 10px; padding-bottom: 10px; font-size: var(--ui-font-m);
   }
-  html.layout-mobile .lintbar, html.layout-mobile .edstatus, html.layout-mobile .notes { font-size: 14px; }
-  html.layout-mobile .toast { grid-area: stage; bottom: calc(124px + env(safe-area-inset-bottom)); font-size: 14px; }
+  html.layout-mobile .lintbar, html.layout-mobile .edstatus, html.layout-mobile .notes { font-size: var(--ui-font-m); }
+  html.layout-mobile .toast { grid-area: stage; bottom: calc(var(--ui-tap-lg) + var(--ui-tap) + 32px + var(--sab)); font-size: var(--ui-font-m); }
   html.layout-mobile .sheet-back { grid-area: stage; }
   html.layout-mobile .app.kb-open {
     grid-template-areas: "hdr" "stage";
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
   }
   html.layout-mobile .app.kb-open .controls,
   html.layout-mobile .app.kb-open .mob-tabs { display: none; }
@@ -351,10 +448,10 @@
     font-variant-numeric: tabular-nums;
     border-bottom: 1px solid var(--line);
   }
-  html.layout-mobile .data-sec { padding: 8px 12px; font-size: 14px; border-bottom: 1px solid var(--line); }
-  html.layout-mobile .data-sec h3 { margin: 0 0 6px; font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  html.layout-mobile .data-sec { padding: 8px 12px; font-size: var(--ui-font-m); border-bottom: 1px solid var(--line); }
+  html.layout-mobile .data-sec h3 { margin: 0 0 6px; font-size: var(--ui-font-m); color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
   html.layout-mobile .data-opts { display: flex; flex-wrap: wrap; gap: 10px 16px; }
-  html.layout-mobile .data-opts label.chk { min-height: 44px; font-size: 14px; }
+  html.layout-mobile .data-opts label.chk { min-height: var(--ui-tap); font-size: var(--ui-font-m); }
 
   html.layout-mobile .sheet-back {
     display: none;
@@ -367,28 +464,48 @@
     width: 100%; max-width: 520px;
     background: var(--bg2); border-top: 1px solid var(--line);
     border-radius: 16px 16px 0 0;
-    padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+    padding: 16px 16px calc(16px + var(--sab));
+    max-height: 86svh; overflow: auto;
   }
-  html.layout-mobile .sheet h2 { margin: 0 0 6px; font-size: 16px; }
-  html.layout-mobile .sheet p { margin: 0 0 12px; color: var(--muted); font-size: 14px; }
+  html.layout-mobile .sheet h2 { margin: 0 0 6px; font-size: calc(16px * var(--ui-scale)); }
+  html.layout-mobile .sheet p { margin: 0 0 12px; color: var(--muted); font-size: var(--ui-font-m); }
   html.layout-mobile .sheet .btn { width: 100%; margin-top: 8px; justify-content: center; }
+
+  .pref-sec { margin: 0 0 14px; }
+  .pref-sec h3 { margin: 0 0 8px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .pref-seg { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pref-seg button {
+    flex: 1 1 auto; min-height: 44px; min-width: 64px;
+    background: var(--bg3); border: 1px solid var(--line); border-radius: 6px;
+    color: var(--text); padding: 8px 10px; font-size: 14px;
+  }
+  .pref-seg button[aria-pressed="true"], .pref-seg button.on {
+    background: #1a4a7a; border-color: #2b6ea8;
+  }
+  html.layout-mobile .pref-seg button {
+    min-height: var(--ui-tap); font-size: var(--ui-font-m);
+  }
+  /* hoja de ajustes también en escritorio */
+  #prefsSheet:not(.show) { display: none; }
+  #prefsSheet.show {
+    display: flex; position: fixed; inset: 0; z-index: 40;
+    background: rgba(0,0,0,.45); align-items: flex-end; justify-content: center;
+  }
+  #prefsSheet .sheet {
+    width: 100%; max-width: 520px;
+    background: var(--bg2); border-top: 1px solid var(--line);
+    border-radius: 16px 16px 0 0;
+    padding: 16px 16px calc(16px + var(--sab));
+  }
+  #btnPrefs { font-size: 18px; }
 
   @media (orientation: landscape) {
     html.layout-mobile header {
-      padding-top: 4px; padding-bottom: 4px;
+      padding-top: max(4px, var(--sat)); padding-bottom: 4px;
       flex-wrap: nowrap;
     }
-    html.layout-mobile .fname { max-width: 30vw; }
-    html.layout-mobile .tools {
-      top: 0; right: 0; left: auto;
-      flex-direction: row; flex-wrap: nowrap;
-      justify-content: flex-start;
-      height: 44px; max-height: 44px; max-width: 50%;
-      overflow-x: auto; overflow-y: hidden;
-      background: rgba(16,20,28,.92);
-      padding: 0 4px;
-    }
-    html.layout-mobile .tools .tbtn { padding: 8px 8px; }
+    html.layout-mobile .fname { max-width: 22vw; }
+    html.layout-mobile .tools { max-width: 50%; }
     html.layout-mobile .ro-strip { right: 50%; padding-right: 8px; }
     html.layout-mobile .controls {
       padding-top: 4px; padding-bottom: 4px;
@@ -404,6 +521,7 @@
     <div class="fname" id="fname">—</div>
     <span class="badge" id="editBadge" hidden>editado</span>
     <div class="hdr-actions">
+      <button class="btn icon-btn" id="btnPrefs" type="button" title="Tamaño y disposición" aria-label="Ajustes de pantalla">⚙</button>
       <span class="dropbar">Arrastre un .NCD aquí o</span>
       <label class="btn primary" id="btnOpen" for="fileIn">Abrir archivo</label>
       <input type="file" id="fileIn" accept=".NCD,.ncd,.nc,.txt,text/plain,application/octet-stream" hidden>
@@ -496,6 +614,26 @@
         <div class="scroll" id="dataScroll">
           <div class="data-readout" id="dataReadout"></div>
           <div class="data-sec">
+            <h3>Pantalla</h3>
+            <div class="pref-sec">
+              <h3>Tamaño</h3>
+              <div class="pref-seg" data-pref="scale" role="radiogroup" aria-label="Tamaño">
+                <button type="button" data-val="auto">Auto</button>
+                <button type="button" data-val="chico">Chico</button>
+                <button type="button" data-val="normal">Normal</button>
+                <button type="button" data-val="grande">Grande</button>
+              </div>
+            </div>
+            <div class="pref-sec">
+              <h3>Modo</h3>
+              <div class="pref-seg" data-pref="layout" role="radiogroup" aria-label="Disposición">
+                <button type="button" data-val="auto">Auto</button>
+                <button type="button" data-val="vertical">Vertical</button>
+                <button type="button" data-val="horizontal">Horizontal</button>
+              </div>
+            </div>
+          </div>
+          <div class="data-sec">
             <h3>Opciones</h3>
             <div class="data-opts">
               <label class="chk"><input type="checkbox" id="skipBDMob"> Omitir block delete (/)</label>
@@ -525,6 +663,30 @@
       <button class="btn" type="button" id="saveShare">Compartir…</button>
       <button class="btn" type="button" id="saveCopy">Copiar al portapapeles</button>
       <button class="btn" type="button" id="saveCancel">Cancelar</button>
+    </div>
+  </div>
+  <div class="sheet-back" id="prefsSheet" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="prefsSheetTitle">
+      <h2 id="prefsSheetTitle">Pantalla</h2>
+      <p>Ajuste el tamaño de botones y el modo de disposición. Auto elige según el teléfono.</p>
+      <div class="pref-sec">
+        <h3>Tamaño</h3>
+        <div class="pref-seg" data-pref="scale" role="radiogroup" aria-label="Tamaño">
+          <button type="button" data-val="auto">Auto</button>
+          <button type="button" data-val="chico">Chico</button>
+          <button type="button" data-val="normal">Normal</button>
+          <button type="button" data-val="grande">Grande</button>
+        </div>
+      </div>
+      <div class="pref-sec">
+        <h3>Modo</h3>
+        <div class="pref-seg" data-pref="layout" role="radiogroup" aria-label="Disposición">
+          <button type="button" data-val="auto">Auto</button>
+          <button type="button" data-val="vertical">Vertical</button>
+          <button type="button" data-val="horizontal">Horizontal</button>
+        </div>
+      </div>
+      <button class="btn primary" type="button" id="prefsClose">Listo</button>
     </div>
   </div>
 </div>
@@ -2238,26 +2400,109 @@ function syncCheckboxes() {
   if ($("skipBDMob")) $("skipBDMob").checked = $("skipBD").checked;
   if ($("showDiscMob")) $("showDiscMob").checked = $("showDisc").checked;
 }
-function onVisualViewport() {
+function setViewportVars() {
   const vv = window.visualViewport;
-  if (!vv) return;
-  document.documentElement.style.setProperty("--vv-h", vv.height + "px");
-  document.documentElement.style.setProperty("--vv-off", (vv.offsetTop || 0) + "px");
-  const kb = isMobileLayout() && ((window.innerHeight - vv.height) > 80);
+  const h = (vv && vv.height) || window.innerHeight || document.documentElement.clientHeight || 0;
+  const off = (vv && vv.offsetTop) || 0;
+  if (!h) return;
+  const st = document.documentElement.style;
+  st.setProperty("--vh", (h * 0.01) + "px");
+  st.setProperty("--app-h", h + "px");
+  st.setProperty("--vv-h", h + "px");
+  st.setProperty("--vv-off", off + "px");
+}
+function scaleFor(mode) {
+  if (mode === "chico") return 0.85;
+  if (mode === "grande") return 1.18;
+  if (mode === "normal") return 1;
+  const h = (window.visualViewport && window.visualViewport.height) || window.innerHeight || 800;
+  const w = (window.visualViewport && window.visualViewport.width) || window.innerWidth || 800;
+  if (h >= w && h < 500) return 0.85;
+  return 1;
+}
+function uiPrefs() {
+  const ui = uiState();
+  return { uiScale: ui.uiScale || "auto", layoutMode: ui.layoutMode || "auto" };
+}
+function wantMobile() {
+  try {
+    const h = location.hash || "";
+    const m = h.match(/demo=([\w,\-]+)/);
+    if (m && m[1].split(",").indexOf("mobile") >= 0) return true;
+    if (/(?:^|[?&#])force-mobile(?:&|=|$)/.test(h + (location.search || ""))) return true;
+  } catch (e) {}
+  const mode = uiPrefs().layoutMode;
+  if (mode === "vertical") return true;
+  if (mode === "horizontal") return false;
+  try {
+    if (window.matchMedia("(pointer: coarse)").matches) return true;
+    if (window.matchMedia("(hover: none) and (max-width: 1024px)").matches) return true;
+    if (window.matchMedia("(max-width: 820px)").matches) return true;
+    const standalone = window.matchMedia("(display-mode: standalone)").matches
+      || window.navigator.standalone === true;
+    const w = Math.min(window.innerWidth || 9999, document.documentElement.clientWidth || 9999);
+    if (standalone && w <= 1024) return true;
+    if (window.matchMedia("(orientation: portrait) and (max-width: 1024px)").matches) return true;
+  } catch (e2) {
+    return Math.min(window.innerWidth, screen.width) <= 820;
+  }
+  return false;
+}
+function applyUiScale() {
+  const mode = uiPrefs().uiScale;
+  document.documentElement.style.setProperty("--ui-scale", String(scaleFor(mode)));
+  document.documentElement.setAttribute("data-ui-scale", mode);
+  document.documentElement.setAttribute("data-layout-mode", uiPrefs().layoutMode);
+  document.querySelectorAll(".pref-seg[data-pref='scale'] button").forEach(b => {
+    const on = b.dataset.val === mode;
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+  document.querySelectorAll(".pref-seg[data-pref='layout'] button").forEach(b => {
+    const on = b.dataset.val === uiPrefs().layoutMode;
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+}
+function setUiScale(mode) {
+  const allowed = { auto: 1, chico: 1, normal: 1, grande: 1 };
+  if (!allowed[mode]) mode = "auto";
+  saveUi({ uiScale: mode });
+  applyUiScale();
+  requestAnimationFrame(resize);
+}
+function setLayoutMode(mode) {
+  const allowed = { auto: 1, vertical: 1, horizontal: 1 };
+  if (!allowed[mode]) mode = "auto";
+  saveUi({ layoutMode: mode });
+  applyUiScale();
+  syncLayout();
+}
+function openPrefs() {
+  const el = $("prefsSheet");
+  if (!el) return;
+  el.hidden = false;
+  el.classList.add("show");
+  applyUiScale();
+}
+function closePrefs() {
+  const el = $("prefsSheet");
+  if (!el) return;
+  el.classList.remove("show");
+  el.hidden = true;
+}
+function onVisualViewport() {
+  setViewportVars();
+  if (uiPrefs().uiScale === "auto") applyUiScale();
+  const vv = window.visualViewport;
+  const kb = isMobileLayout() && vv && ((window.innerHeight - vv.height) > 80);
   $("app").classList.toggle("kb-open", kb);
   resize();
 }
 function syncLayout() {
-  const want = (function () {
-    try {
-      const h = location.hash || "";
-      const m = h.match(/demo=([\w,\-]+)/);
-      if (m && m[1].split(",").indexOf("mobile") >= 0) return true;
-      if (/(?:^|[?&#])force-mobile(?:&|=|$)/.test(h + (location.search || ""))) return true;
-    } catch (e) {}
-    try { return window.matchMedia("(max-width: 820px), (pointer: coarse)").matches; }
-    catch (e2) { return Math.min(window.innerWidth, screen.width) <= 820; }
-  })();
+  setViewportVars();
+  applyUiScale();
+  const want = wantMobile();
   document.documentElement.classList.toggle("layout-mobile", want);
   $("app").classList.toggle("layout-mobile", want);
   if (want) {
@@ -2268,6 +2513,20 @@ function syncLayout() {
 }
 document.querySelectorAll("#side > .tabs .tab").forEach(t => t.addEventListener("click", () => setTab(t.dataset.tab)));
 document.querySelectorAll(".mob-tab").forEach(t => t.addEventListener("click", () => setMobTab(t.dataset.mob)));
+if ($("btnPrefs")) $("btnPrefs").addEventListener("click", openPrefs);
+if ($("prefsClose")) $("prefsClose").addEventListener("click", closePrefs);
+if ($("prefsSheet")) $("prefsSheet").addEventListener("click", ev => { if (ev.target === $("prefsSheet")) closePrefs(); });
+document.querySelectorAll(".pref-seg").forEach(seg => {
+  seg.addEventListener("click", ev => {
+    const b = ev.target.closest("button[data-val]");
+    if (!b) return;
+    if (seg.dataset.pref === "scale") setUiScale(b.dataset.val);
+    else if (seg.dataset.pref === "layout") setLayoutMode(b.dataset.val);
+  });
+});
+document.addEventListener("keydown", ev => {
+  if (ev.key === "Escape" && $("prefsSheet") && $("prefsSheet").classList.contains("show")) closePrefs();
+});
 $("btnPanel").addEventListener("click", () => showPanel($("side").classList.contains("collapsed")));
 if ($("roStrip")) $("roStrip").addEventListener("click", () => { if (isMobileLayout()) setMobTab("data"); });
 (function splitter() {
@@ -2495,6 +2754,12 @@ window.__vf = {
   mobTab: function () { return $("app").dataset.mobTab || "plot"; },
   setMobTab: setMobTab,
   syncLayout: syncLayout,
+  uiPrefs: uiPrefs,
+  setUiScale: setUiScale,
+  setLayoutMode: setLayoutMode,
+  openPrefs: openPrefs,
+  closePrefs: closePrefs,
+  setViewportVars: setViewportVars,
   getView: function () { return { cz: view.cz, cr: view.cr, s: view.s, ready: view.ready, w: cw(), h: chh() }; },
   currentT: function () { return currentT; },
   setT: function (t) { currentT = t; redraw(); },
@@ -2540,7 +2805,15 @@ window.__vf = {
       mobile: isMobileLayout(),
       tab: $("app").dataset.mobTab || "plot",
       htmlClass: document.documentElement.className,
-      viewport: { w: window.innerWidth, h: window.innerHeight, dpr: window.devicePixelRatio || 1 },
+      uiScale: uiPrefs().uiScale,
+      layoutMode: uiPrefs().layoutMode,
+      scaleValue: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ui-scale")) || 1,
+      appH: getComputedStyle(document.documentElement).getPropertyValue("--app-h").trim(),
+      safe: {
+        top: getComputedStyle(document.documentElement).getPropertyValue("--sat").trim(),
+        bottom: getComputedStyle(document.documentElement).getPropertyValue("--sab").trim()
+      },
+      viewport: { w: window.innerWidth, h: window.innerHeight, vvH: (window.visualViewport && window.visualViewport.height) || window.innerHeight, dpr: window.devicePixelRatio || 1 },
       scroll: {
         docW: document.documentElement.scrollWidth, clientW: document.documentElement.clientWidth,
         docH: document.documentElement.scrollHeight, clientH: document.documentElement.clientHeight,
@@ -2551,7 +2824,7 @@ window.__vf = {
       app: box("app"), canvas: box("view"), header: box(header), mobTabs: box("mobTabs"),
       controls: box("controls"), roStrip: box("roStrip"), side: box("side"), stage: box("stage"),
       btnPlay: box("btnPlay"), btnPrev: box("btnPrev"), btnNext: box("btnNext"),
-      btnOpen: box("btnOpen"), btnSave: box("btnSave"), ed: box("ed"),
+      btnOpen: box("btnOpen"), btnSave: box("btnSave"), btnPrefs: box("btnPrefs"), ed: box("ed"),
       splitter: box("splitter"), readoutBox: box("readoutBox"), timeline: box("timeline"),
       saveSheet: box("saveSheet"), tabs: tabs
     };
