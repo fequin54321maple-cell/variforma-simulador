@@ -1,0 +1,49 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Materializar iconos PNG desde base64
+        run: |
+          python3 - <<'PY'
+          import base64
+          from pathlib import Path
+          root = Path("icons")
+          written = 0
+          for src in sorted(root.glob("*.png.b64")):
+              dest = src.with_name(src.name[: -len(".b64")])
+              dest.write_bytes(base64.b64decode("".join(src.read_text().split())))
+              print(f"wrote {dest} ({dest.stat().st_size} bytes)")
+              written += 1
+          if written < 5:
+              raise SystemExit(f"expected 5 icons, wrote {written}")
+          PY
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
