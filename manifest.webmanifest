@@ -1,0 +1,85 @@
+{
+  "name": "Variforma Simulador",
+  "short_name": "Variforma",
+  "description": "Simulador de trayectorias NC para máquinas de hilado y flow-forming Variforma.",
+  "lang": "es",
+  "dir": "ltr",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0e1116",
+  "theme_color": "#0e1116",
+  "categories": [
+    "utilities",
+    "productivity"
+  ],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "./",
+      "accept": {
+        "text/plain": [
+          ".ncd",
+          ".NCD",
+          ".nc",
+          ".txt"
+        ],
+        "application/octet-stream": [
+          ".ncd",
+          ".NCD",
+          ".nc"
+        ]
+      }
+    }
+  ],
+  "share_target": {
+    "action": "./share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "file",
+          "accept": [
+            ".ncd",
+            ".NCD",
+            ".nc",
+            ".txt",
+            "text/plain",
+            "application/octet-stream"
+          ]
+        }
+      ]
+    }
+  }
+}
