@@ -1,6 +1,6 @@
 /* Service worker del Simulador Variforma: caché cache-first y share_target. */
-/* 7240553ee24b y ["./", "./index.html", "./pwa.js", "./manifest.webmanifest", "./version.json", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-192-maskable.png", "./icons/icon-512-maskable.png", "./icons/apple-touch-icon.png", "./examples/O9000_copa_demo_v2_4_1.NCD"] los rellena pwa_build.py */
-const VERSION = "7240553ee24b";
+/* beaad6ce5f1b y ["./", "./index.html", "./pwa.js", "./manifest.webmanifest", "./version.json", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-192-maskable.png", "./icons/icon-512-maskable.png", "./icons/apple-touch-icon.png", "./examples/O9000_copa_demo_v2_4_1.NCD"] los rellena pwa_build.py */
+const VERSION = "beaad6ce5f1b";
 const CACHE = "variforma-sim-" + VERSION;
 const PRECACHE = ["./", "./index.html", "./pwa.js", "./manifest.webmanifest", "./version.json", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-192-maskable.png", "./icons/icon-512-maskable.png", "./icons/apple-touch-icon.png", "./examples/O9000_copa_demo_v2_4_1.NCD"];
 const SHARE_INBOX = "variforma-share-inbox";

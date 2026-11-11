@@ -3191,8 +3191,8 @@ function selectLine(line, opts) {
     }
   }
   if (opts.revealEditor && selLine) revealEditorLine(selLine, { focus: !!opts.focus });
-  if (!opts.silent) { draw(); updateReadout(); updatePickInfo(); highlightListing(blockIndexAt(currentT)); }
-  highlightEditorLine(selLine || editorHighlightLine(), !!opts.scrollEditor);
+  if (!opts.silent) redraw();
+  else highlightEditorLine(selLine || editorHighlightLine(), !!opts.scrollEditor);
   if (opts.scrollEditor) keepEditorLineVisible();
   return { line: selLine, blocks: selBlocks, noMove: selNoMove, pos: selPos, source: selSource };
 }
