@@ -125,6 +125,18 @@
   header h1 span { color: var(--accent); }
   .fname { color: var(--muted); }
   .badge { font-size: 11px; padding: 1px 7px; border-radius: 99px; background: rgba(52,211,153,.12); color: var(--ok); border: 1px solid var(--ok); }
+  .badge.pending { background: rgba(245,185,66,.16); color: #f5b942; border-color: #f5b942; white-space: nowrap; }
+  html.layout-mobile .app.mob-editor #pendingBadge { display: none; }
+  .pending-bar {
+    display: none; flex: none; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 6px 8px; background: rgba(245,185,66,.12); border-bottom: 1px solid #8a6a22;
+    color: #f5b942; font-size: 13px;
+  }
+  .pending-bar.show { display: flex; }
+  .pending-bar .pending-msg { flex: 1 1 auto; min-width: 10em; font-weight: 650; }
+  .pending-bar .pending-actions { display: flex; gap: 8px; flex: none; }
+  .pending-bar .btn { min-height: 44px; padding: 6px 14px; }
+  #savePendingNote { color: #f5b942; font-size: 13px; margin: 0 0 10px; }
   .hdr-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .btn { background: var(--bg3); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; }
   .btn:hover { border-color: var(--accent); }
@@ -453,6 +465,12 @@
   html.layout-mobile .edbar label.chk { flex: none; white-space: nowrap; }
   html.layout-mobile .edbar .btn { min-height: var(--ui-tap); padding: 8px 12px; font-size: var(--ui-font-m); }
   html.layout-mobile .edbar label.chk { font-size: var(--ui-font-m); min-height: var(--ui-tap); }
+  html.layout-mobile .pending-bar {
+    padding: 6px 8px; font-size: var(--ui-font-m); gap: 8px;
+  }
+  html.layout-mobile .pending-bar .btn {
+    min-height: var(--ui-tap); min-width: 96px; font-size: var(--ui-font-m);
+  }
   html.layout-mobile .edstatus {
     flex-wrap: nowrap;
     white-space: nowrap;
@@ -681,6 +699,7 @@
     <h1><span class="hdr-full">Simulador de trayectorias </span><span>Variforma</span></h1>
     <div class="fname" id="fname">—</div>
     <span class="badge" id="editBadge" hidden>editado</span>
+    <span class="badge pending" id="pendingBadge" hidden>cambios sin aceptar</span>
     <div class="hdr-actions">
       <button class="btn icon-btn" id="btnPrefs" type="button" title="Tamaño, disposición y colores" aria-label="Ajustes de pantalla">⚙</button>
       <span class="dropbar">Arrastre un .NCD aquí o</span>
@@ -759,6 +778,13 @@
           <label class="chk" title="Agrega N a los bloques que no la tienen (/M9, G04…)"><input type="checkbox" id="renAdd"> numerar bloques sin N</label>
           <button class="btn" id="btnRestore" type="button" title="Volver al programa original (se puede deshacer)">Restaurar original</button>
         </div>
+        <div class="pending-bar" id="pendingBar" hidden>
+          <span class="pending-msg" id="pendingMsg">cambios sin aceptar</span>
+          <div class="pending-actions">
+            <button class="btn primary" type="button" id="btnAccept" title="Confirma la edición: la vista previa pasa a ser la trayectoria">Aceptar</button>
+            <button class="btn" type="button" id="btnCancelEdit" title="Vuelve al texto y la trayectoria de la última versión aceptada">Cancelar</button>
+          </div>
+        </div>
         <div class="banner" id="restoreBanner" hidden></div>
         <div class="edwrap" id="edwrap">
           <div class="gutter"><div id="gutInner"></div></div>
@@ -826,8 +852,10 @@
   <div class="sheet-back" id="saveSheet" hidden>
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="saveSheetTitle">
       <h2 id="saveSheetTitle">Guardar programa</h2>
+      <p id="savePendingNote" hidden>Hay cambios sin aceptar. Para guardar la nueva trayectoria, acéptela primero. El autoguardado ya conservó el borrador en este aparato.</p>
       <p id="saveMeta"></p>
       <button class="btn primary" type="button" id="saveDownload">Descargar</button>
+      <button class="btn primary" type="button" id="saveAcceptDownload" hidden>Aceptar y guardar</button>
       <button class="btn" type="button" id="saveShare">Compartir…</button>
       <button class="btn" type="button" id="saveCopy">Copiar al portapapeles</button>
       <button class="btn" type="button" id="saveCancel">Cancelar</button>
@@ -875,6 +903,8 @@ const TOOL_COLORS = { forming: "#3b9eff", flanging: "#ff8c42", other: "#c084fc" 
 const DEFAULT_G_COLORS = { 0: "#9aa5b4", 1: "#3b9eff", 2: "#34d399", 3: "#c084fc" };
 const SEL_COLOR = "#ff2d78";
 const SEL_CORE = "#ffffff";
+const PREVIEW_COLOR = "#f5b942";
+const ORIG_GHOST_COLOR = "#93a0b3";
 const DEFAULT_TOOLS = {
   T0101: { tip_radius: 12, diameter: 320, role: "forming", color: "#3b9eff",
            aliases: ["T01","T0101","T1"], label: "T0101 formado R12 Ø320" },
@@ -1688,6 +1718,8 @@ let view = { cz: 0, cr: 0, s: 1, ready: false };
 let lastSize = { w: 0, h: 0 };
 let boxTool = false, follow = false, followCursor = true, origSim = null, drag = null, hover = null;
 let selLine = 0, selBlocks = [], selNoMove = false, selSource = null, selPos = null;
+let accepted = "";
+let previewSim = null;
 let gColors = { 0: DEFAULT_G_COLORS[0], 1: DEFAULT_G_COLORS[1], 2: DEFAULT_G_COLORS[2], 3: DEFAULT_G_COLORS[3] };
 let pointers = new Map(), pinch = null, lastTap = null, tapTimer = 0;
 let pendingSave = null, layoutMq = null;
@@ -1825,11 +1857,33 @@ function isChangedBlock(b, origMap) {
   return blockGeomKey(b) !== blockGeomKey(ob);
 }
 
-function reparse(opts) {
-  opts = opts || {};
-  clearTimeout(reparseTimer);
-  const text = ed.value;
-  const skip = $("skipBD").checked;
+function hasPending() {
+  return !!(ed && accepted != null && ed.value !== accepted);
+}
+function acceptedBlockMap() {
+  const m = new Map();
+  if (sim && sim.blocks) sim.blocks.forEach(b => { if (b.line != null) m.set(b.line, b); });
+  return m;
+}
+function isPreviewChanged(b, accMap) {
+  if (!b) return false;
+  const st = diffInfo && diffInfo.status && b.line ? diffInfo.status[b.line - 1] : "";
+  if (st === "add" || st === "mod") {
+    const ab = accMap && accMap.get(b.line);
+    if (!ab) return true;
+    return blockGeomKey(b) !== blockGeomKey(ab);
+  }
+  const ab = accMap && accMap.get(b.line);
+  if (!ab) return true;
+  return blockGeomKey(b) !== blockGeomKey(ab);
+}
+function previewChangedBlocks() {
+  if (!previewSim || !previewSim.blocks) return [];
+  const acc = acceptedBlockMap();
+  return previewSim.blocks.filter(b => isPreviewChanged(b, acc));
+}
+function computeSimulation(text) {
+  const skip = $("skipBD") ? $("skipBD").checked : false;
   const pristine = isPreloadedFile && PRELOADED && PRELOADED.blocks && text === original && !skip && PRELOADED.skipBlockDelete === false;
   const s = pristine ? JSON.parse(JSON.stringify(PRELOADED)) : simulate(text, simOpts(skip));
   const js = lintNC(text, { generated: isGenerated(text), rpmMax: rpmMax() }).map(i => Object.assign({ source: "navegador" }, i));
@@ -1843,22 +1897,122 @@ function reparse(opts) {
     }));
     const keys = new Set(py.map(i => i.code + "|" + i.line));
     all = py.concat(js.filter(i => !keys.has(i.code + "|" + i.line)));
-    $("lintSrc").textContent = "nc_lint + verificador (Python) + reglas del navegador";
-  } else {
-    $("lintSrc").textContent = text === original ? "Reglas esenciales del navegador" : "Programa editado: reglas esenciales del navegador (el lint completo y la colisión se recalculan con cli.py)";
+    if ($("lintSrc")) $("lintSrc").textContent = "nc_lint + verificador (Python) + reglas del navegador";
+  } else if ($("lintSrc")) {
+    $("lintSrc").textContent = text === original
+      ? "Reglas esenciales del navegador"
+      : "Programa editado: reglas esenciales del navegador (el lint completo y la colisión se recalculan con cli.py)";
   }
-  findings = all;
   const byLine = {};
   all.forEach(f => { if (f.line != null) (byLine[f.line] || (byLine[f.line] = [])).push(f); });
   s.blocks.forEach(b => { b.lint = byLine[b.line] ? byLine[b.line].slice() : []; });
   s.filename = originalName;
+  s._findings = all;
+  return s;
+}
+function applyAccepted(opts) {
+  opts = opts || {};
+  clearTimeout(reparseTimer);
+  const text = accepted != null ? accepted : (ed ? ed.value : "");
+  const s = computeSimulation(text);
+  findings = s._findings || [];
   const fit = firstLoad || opts.fit;
   loadSim(s, { keepView: !fit, keepTime: !firstLoad && !opts.resetTime });
   firstLoad = false;
   renderDecor();
   renderLintList();
+  updatePendingUI();
   if (selLine) selectLine(selLine, { source: selSource || "editor", silent: false, keepTime: true, revealEditor: false });
   else if (!fit && followCursor) syncCursorOnPlot({ silent: false, scrollEditor: false });
+  return s;
+}
+function refreshPreview(opts) {
+  opts = opts || {};
+  clearTimeout(reparseTimer);
+  if (!hasPending()) {
+    previewSim = null;
+    const s = computeSimulation(accepted || (ed ? ed.value : ""));
+    findings = s._findings || [];
+    renderDecor();
+    renderLintList();
+    updatePendingUI();
+    buildLegend();
+    if (!opts.silent) {
+      if (selLine) selectLine(selLine, { source: selSource || "editor", silent: false, keepTime: true, revealEditor: false });
+      else draw();
+    }
+    return null;
+  }
+  previewSim = computeSimulation(ed.value);
+  findings = previewSim._findings || [];
+  renderDecor();
+  renderLintList();
+  updatePendingUI();
+  buildLegend();
+  if (selLine) selectLine(selLine, { source: selSource || "editor", silent: false, keepTime: true, revealEditor: false });
+  else if (!opts.silent) { draw(); updateReadout(); }
+  return previewSim;
+}
+function reparse(opts) {
+  opts = opts || {};
+  if (opts.apply || opts.fit || opts.resetTime || !hasPending()) applyAccepted(opts);
+  else refreshPreview(opts);
+}
+function updatePendingUI() {
+  const pend = hasPending();
+  const bar = $("pendingBar");
+  if (bar) { bar.hidden = !pend; bar.classList.toggle("show", pend); }
+  if ($("btnAccept")) $("btnAccept").disabled = !pend;
+  if ($("btnCancelEdit")) $("btnCancelEdit").disabled = !pend;
+  const pb = $("pendingBadge");
+  if (pb) pb.hidden = !pend;
+  const editedAccepted = !!(accepted && original && accepted !== original);
+  if ($("editBadge")) $("editBadge").hidden = !editedAccepted || pend;
+  const n = (previewSim && previewChangedBlocks().length) || 0;
+  if ($("pendingMsg")) {
+    $("pendingMsg").textContent = n
+      ? ("cambios sin aceptar · " + n + " tramo(s) en vista previa")
+      : "cambios sin aceptar";
+  }
+  if ($("app")) $("app").classList.toggle("has-pending", pend);
+}
+function acceptEdits(opts) {
+  opts = opts || {};
+  if (!hasPending() && !opts.force) return false;
+  accepted = ed.value;
+  const s = previewSim || computeSimulation(accepted);
+  previewSim = null;
+  findings = s._findings || findings;
+  const fit = !!opts.fit;
+  loadSim(s, { keepView: !fit, keepTime: !opts.resetTime });
+  firstLoad = false;
+  renderDecor();
+  renderLintList();
+  updatePendingUI();
+  buildLegend();
+  scheduleAutosave();
+  if (!opts.silent) toast("Trayectoria aceptada.");
+  return true;
+}
+function cancelEdits(opts) {
+  opts = opts || {};
+  if (!hasPending()) return false;
+  pushHist();
+  ed.value = accepted;
+  pushHist();
+  previewSim = null;
+  const s = computeSimulation(accepted);
+  findings = s._findings || [];
+  renderDecor();
+  renderLintList();
+  updatePendingUI();
+  buildLegend();
+  updateUndoButtons();
+  if (selLine) selectLine(selLine, { source: selSource || "editor", silent: false, keepTime: true, revealEditor: false });
+  else { draw(); updateReadout(); }
+  scheduleAutosave();
+  if (!opts.silent) toast("Edición cancelada. Se volvió a la trayectoria aceptada.");
+  return true;
 }
 
 function loadSim(s, o) {
@@ -1987,15 +2141,15 @@ function highlightEditorLine(line, autoscroll) {
   }
 }
 function updateEditBadge() {
-  const edited = ed.value !== original;
-  $("editBadge").hidden = !edited;
   $("cntDiff").innerHTML = diffInfo.changed ? ' <span class="d">' + diffInfo.changed + "</span>" : "";
   if ($("cntDiffMob")) $("cntDiffMob").innerHTML = diffInfo.changed ? " (" + diffInfo.changed + ")" : "";
+  updatePendingUI();
 }
 function updateStatus() {
   const ln = statusLineOverride || lineOfOffset(ed.selectionStart || 0);
   const e = findings.filter(f => f.level === "error").length, w = findings.filter(f => f.level === "warning").length;
   $("edStatus").innerHTML = "<span>Línea " + ln + " / " + lineCount() + "</span><span>" + diffInfo.changed + " línea(s) cambiada(s)</span>" +
+    (hasPending() ? '<span style="color:#f5b942">cambios sin aceptar</span>' : "") +
     '<span style="color:' + (e ? "var(--err)" : "inherit") + '">' + e + " error(es)</span>" +
     '<span style="color:' + (w ? "var(--warn)" : "inherit") + '">' + w + " aviso(s)</span>" +
     "<span>Autoguardado: " + autosaveState + "</span>";
@@ -2032,8 +2186,10 @@ function setEditorText(text, sync) {
 }
 function onEdited(immediate, sync) {
   renderDecor();
+  updatePendingUI();
   clearTimeout(reparseTimer);
-  if (sync) reparse(); else reparseTimer = setTimeout(reparse, immediate ? 0 : 280);
+  if (sync) refreshPreview();
+  else reparseTimer = setTimeout(refreshPreview, immediate ? 0 : 280);
   scheduleAutosave();
   updateUndoButtons();
 }
@@ -2043,14 +2199,19 @@ function hashStr(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h
 function asKey() { return "variforma-sim-edit:" + originalName + ":" + hashStr(original); }
 function scheduleAutosave() { clearTimeout(saveTimer); saveTimer = setTimeout(doAutosave, 400); }
 function doAutosave() {
-  if (ed.value === original) { lsDel(asKey()); autosaveState = "sin cambios"; }
-  else if (lsSet(asKey(), JSON.stringify({ text: ed.value, ts: Date.now() }))) autosaveState = "guardado " + new Date().toLocaleTimeString("es");
-  else autosaveState = "no disponible";
+  const unchanged = ed.value === original && accepted === original;
+  if (unchanged) { lsDel(asKey()); autosaveState = "sin cambios"; }
+  else if (lsSet(asKey(), JSON.stringify({ text: ed.value, accepted: accepted, ts: Date.now() }))) {
+    autosaveState = hasPending() ? ("borrador sin aceptar " + new Date().toLocaleTimeString("es")) : ("guardado " + new Date().toLocaleTimeString("es"));
+  } else autosaveState = "no disponible";
   updateStatus();
 }
 function checkAutosave() {
   const raw = lsGet(asKey()); if (!raw) return null;
-  try { const d = JSON.parse(raw); if (d && typeof d.text === "string" && d.text !== original) return d; } catch (e) {}
+  try {
+    const d = JSON.parse(raw);
+    if (d && typeof d.text === "string" && (d.text !== original || (typeof d.accepted === "string" && d.accepted !== original))) return d;
+  } catch (e) {}
   return null;
 }
 function showRestoreBanner(saved) {
@@ -2063,27 +2224,37 @@ function showRestoreBanner(saved) {
 
 function openProgram(text, name, preloaded) {
   selLine = 0; selBlocks = []; selNoMove = false; selSource = null; selPos = null;
+  previewSim = null;
   original = String(text).replace(/\r\n?/g, "\n");
   originalName = name || "programa.NCD";
   isPreloadedFile = !!preloaded;
   $("restoreBanner").hidden = true;
   const saved = checkAutosave();
+  accepted = (saved && typeof saved.accepted === "string") ? saved.accepted.replace(/\r\n?/g, "\n") : original;
   ed.value = saved ? saved.text : original;
   if (saved) showRestoreBanner(saved);
   resetHist();
   ed.scrollTop = 0;
   firstLoad = true;
   refreshOrigSim();
-  reparse({ fit: true, resetTime: true });
-  autosaveState = saved ? "recuperado" : "sin cambios";
+  applyAccepted({ fit: true, resetTime: true });
+  if (hasPending()) refreshPreview();
+  autosaveState = saved ? (hasPending() ? "recuperado (sin aceptar)" : "recuperado") : "sin cambios";
   updateStatus();
+  updatePendingUI();
 }
 function restoreOriginal(noConfirm) {
-  if (ed.value === original) { toast("El programa ya es el original."); return; }
+  if (ed.value === original && accepted === original) { toast("El programa ya es el original."); return; }
   if (!noConfirm && !confirm("¿Restaurar el programa original? Los cambios se pueden recuperar con Deshacer.")) return;
-  setEditorText(original, true);
+  pushHist();
+  ed.value = original;
+  accepted = original;
+  previewSim = null;
+  pushHist();
+  applyAccepted({});
   lsDel(asKey());
   autosaveState = "sin cambios";
+  updateUndoButtons();
   toast("Programa original restaurado (Ctrl+Z para volver a la edición).");
 }
 
@@ -2128,11 +2299,16 @@ function openSaveSheet(info) {
   $("saveSheetTitle").textContent = "Guardar " + info.name;
   const shareBtn = $("saveShare");
   const shareOk = !!(navigator.share);
-  shareBtn.hidden = !shareOk;
+  if (shareBtn) shareBtn.hidden = !shareOk || !!info.requireAccept;
+  const note = $("savePendingNote");
+  if (note) note.hidden = !info.requireAccept;
+  const dl = $("saveDownload"), acc = $("saveAcceptDownload");
+  if (dl) dl.hidden = !!info.requireAccept;
+  if (acc) acc.hidden = !info.requireAccept;
   const sh = $("saveSheet"); sh.hidden = false; sh.classList.add("show");
 }
-function saveNcd() {
-  const r = formatForSave(ed.value);
+function savePayload(text) {
+  const r = formatForSave(text);
   const name = editFileName(originalName);
   const blob = new Blob([r.text], { type: "text/plain;charset=utf-8" });
   const summary = saveSummary(r, name);
@@ -2146,11 +2322,20 @@ function saveNcd() {
       doDownload();
     });
   };
-  if (isMobileLayout()) {
-    openSaveSheet({ name, summary, doDownload, doCopy, doShare });
-  } else {
-    doDownload();
+  return { name, summary, r, blob, doDownload, doCopy, doShare };
+}
+function saveNcd() {
+  if (hasPending()) {
+    const info = savePayload(ed.value);
+    info.requireAccept = true;
+    info.summary = "Hay cambios sin aceptar. Acepte para guardar la nueva trayectoria en el .NCD. El autoguardado ya conservó el borrador en este aparato.";
+    info.doAcceptDownload = () => { acceptEdits({ silent: true }); const now = savePayload(accepted); now.doDownload(); };
+    openSaveSheet(info);
+    return;
   }
+  const info = savePayload(accepted || ed.value);
+  if (isMobileLayout()) openSaveSheet(info);
+  else info.doDownload();
 }
 
 function doRenumber() {
@@ -2223,9 +2408,18 @@ function buildLegend() {
     parts.push('<span style="color:' + c + '"><i class="sw" style="border-color:' + c + '"></i>' + escapeHtml(tools[k].label || k) + "</span>");
   }
   parts.push('<span style="color:#e8e0d0"><i class="sw" style="border-color:#e8e0d0"></i>Mandril</span>');
+  if (hasPending()) {
+    parts.push('<span style="color:' + PREVIEW_COLOR + '"><i class="sw dash" style="border-color:' + PREVIEW_COLOR + '"></i>Vista previa</span>');
+  }
+  if (accepted && original && accepted !== original) {
+    parts.push('<span style="color:' + ORIG_GHOST_COLOR + '"><i class="sw dash" style="border-color:' + ORIG_GHOST_COLOR + '"></i>Original</span>');
+  }
   if ($("legend")) $("legend").innerHTML = parts.join("");
   if ($("dataLegend")) $("dataLegend").innerHTML = parts.join("");
-  if ($("plotLegend")) $("plotLegend").innerHTML = gLegendParts().join("");
+  const plotParts = gLegendParts();
+  if (hasPending()) plotParts.push('<span style="color:' + PREVIEW_COLOR + '"><i class="sw dash" style="border-color:' + PREVIEW_COLOR + '"></i>Vista previa</span>');
+  if (accepted && original && accepted !== original) plotParts.push('<span style="color:' + ORIG_GHOST_COLOR + '"><i class="sw dash" style="border-color:' + ORIG_GHOST_COLOR + '"></i>Original</span>');
+  if ($("plotLegend")) $("plotLegend").innerHTML = plotParts.join("");
 }
 function buildListing() {
   const root = $("listing"); root.innerHTML = "";
@@ -2479,6 +2673,52 @@ function drawRoller(z, xDia, tool) {
   ctx.beginPath(); ctx.arc(c[0], c[1], 2.5, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill();
   ctx.restore();
 }
+function previewBlockForLine(line) {
+  if (!previewSim || !line) return null;
+  const motion = previewSim.blocks.filter(b => b.line === line && b.points && b.points.length >= 2);
+  if (motion.length) return motion[0];
+  return previewSim.blocks.find(b => b.line === line) || null;
+}
+function previewMarkerPos() {
+  if (!previewSim) return null;
+  const line = selLine || (function () {
+    const idx = blockIndexAt(currentT);
+    return (sim && idx >= 0 && sim.blocks[idx]) ? sim.blocks[idx].line : 0;
+  })();
+  const b = previewBlockForLine(line);
+  if (!b) return null;
+  if (b.points && b.points.length >= 2) {
+    const p = b.points[b.points.length - 1];
+    return { z: p[0], x: p[1], tool: b.tool, line: b.line, moved: true };
+  }
+  if (b.end_x != null && b.end_z != null) return { z: b.end_z, x: b.end_x, tool: b.tool, line: b.line, moved: false };
+  return null;
+}
+function drawPreviewOverlay() {
+  if (!hasPending() || !previewSim) return;
+  const acc = acceptedBlockMap();
+  const changed = previewSim.blocks.filter(b => b.points && b.points.length >= 2 && isPreviewChanged(b, acc));
+  changed.forEach(b => {
+    drawPolyline(b.points, PREVIEW_COLOR, 3.2, [8, 6], 0.95);
+    const a = b.points[0], c = b.points[b.points.length - 1];
+    const pa = w2s(a[0], a[1] / 2), pc = w2s(c[0], c[1] / 2);
+    ctx.save();
+    ctx.strokeStyle = PREVIEW_COLOR; ctx.lineWidth = 2; ctx.setLineDash([3, 3]); ctx.fillStyle = "transparent";
+    ctx.beginPath(); ctx.arc(pa[0], pa[1], 5, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(pc[0], pc[1], 6, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  });
+  const mk = previewMarkerPos();
+  if (mk && mk.z != null && mk.x != null) {
+    const p = w2s(mk.z, mk.x / 2);
+    ctx.save();
+    ctx.strokeStyle = PREVIEW_COLOR; ctx.lineWidth = 2.4; ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.arc(p[0], p[1], 11, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(p[0], p[1], 3, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
+}
 function draw() {
   const w = cw(), h = chh();
   ctx.clearRect(0, 0, w, h);
@@ -2498,23 +2738,21 @@ function draw() {
     const [zA] = s2w(PAD_L, 0), [zB] = s2w(w, 0);
     drawPolyline([[zA, 0], [zB, 0]], "#4b5563", 1, [2, 4], 0.8);
     const idx = blockIndexAt(currentT);
-    const edited = !!(ed && original && ed.value !== original && origSim);
-    const omap = edited ? origBlockMap() : null;
-    if (edited && origSim.blocks) {
+    const showOrig = !!(origSim && origSim.blocks && accepted && original && accepted !== original);
+    if (showOrig) {
       origSim.blocks.forEach(b => {
         if (!b.points || b.points.length < 2) return;
-        drawPolyline(b.points, "#93a0b3", 1.35, [5, 5], 0.28);
+        drawPolyline(b.points, ORIG_GHOST_COLOR, 1.2, [2, 6], 0.22);
       });
     }
     sim.blocks.forEach((b, i) => {
       if (!b.points || b.points.length < 2) return;
       const rapid = b.g === 0 || b.kind === "g30" || b.kind === "g28";
       const cur = i === idx, past = i < idx;
-      const changed = edited && isChangedBlock(b, omap);
       const col = colorForBlock(b);
-      if (changed) drawPolyline(b.points, "#fbbf24", cur ? 5.4 : 4.2, [], cur ? 0.9 : 0.55);
-      drawPolyline(b.points, changed && !cur ? "#fde68a" : col, cur ? 2.8 : rapid ? 1.2 : 1.8, rapid && !changed ? [7, 5] : [], cur ? 1 : past ? 0.88 : 0.38);
+      drawPolyline(b.points, col, cur ? 2.8 : rapid ? 1.2 : 1.8, rapid ? [7, 5] : [], cur ? 1 : past ? 0.88 : 0.38);
     });
+    drawPreviewOverlay();
     drawSelectionOverlay();
     sim.blocks.forEach(b => {
       const lv = (b.lint || []).some(i => i.level === "error") ? "e" : (b.lint || []).some(i => i.level === "warning") ? "w" : "";
@@ -2997,9 +3235,9 @@ $("zFlange").addEventListener("click", zoomFlange);
 $("zFollow").addEventListener("click", () => { follow = !follow; $("zFollow").classList.toggle("on", follow); redraw(); });
 $("zFull").addEventListener("click", toggleFull);
 $("showDisc").addEventListener("change", () => { syncCheckboxes(); draw(); });
-$("skipBD").addEventListener("change", () => { syncCheckboxes(); refreshOrigSim(); reparse(); });
+$("skipBD").addEventListener("change", () => { syncCheckboxes(); refreshOrigSim(); applyAccepted({}); if (hasPending()) refreshPreview(); });
 if ($("showDiscMob")) $("showDiscMob").addEventListener("change", () => { $("showDisc").checked = $("showDiscMob").checked; draw(); });
-if ($("skipBDMob")) $("skipBDMob").addEventListener("change", () => { $("skipBD").checked = $("skipBDMob").checked; refreshOrigSim(); reparse(); });
+if ($("skipBDMob")) $("skipBDMob").addEventListener("change", () => { $("skipBD").checked = $("skipBDMob").checked; refreshOrigSim(); applyAccepted({}); if (hasPending()) refreshPreview(); });
 $("showInfo").addEventListener("change", renderLintList);
 function onLintClick(e) {
   const li = e.target.closest(".li"); if (!li || !li.dataset.line) return;
@@ -3189,6 +3427,10 @@ function selectLine(line, opts) {
     else if (selPos) {
       if (!pointOnScreen(selPos.z, selPos.x / 2, 24)) centerOn(selPos.z, selPos.x / 2);
     }
+    if (hasPending()) {
+      const pb = previewBlockForLine(selLine);
+      if (pb) ensureBlockVisible(pb);
+    }
   }
   if (opts.revealEditor && selLine) revealEditorLine(selLine, { focus: !!opts.focus });
   if (!opts.silent) redraw();
@@ -3266,6 +3508,11 @@ $("btnRenum").addEventListener("click", doRenumber);
 $("btnRestore").addEventListener("click", () => restoreOriginal(false));
 $("btnSave").addEventListener("click", saveNcd);
 if ($("saveDownload")) $("saveDownload").addEventListener("click", () => { if (pendingSave) { pendingSave.doDownload(); closeSaveSheet(); } });
+if ($("saveAcceptDownload")) $("saveAcceptDownload").addEventListener("click", () => {
+  if (pendingSave && pendingSave.doAcceptDownload) { pendingSave.doAcceptDownload(); closeSaveSheet(); }
+});
+if ($("btnAccept")) $("btnAccept").addEventListener("click", () => acceptEdits());
+if ($("btnCancelEdit")) $("btnCancelEdit").addEventListener("click", () => cancelEdits());
 if ($("saveShare")) $("saveShare").addEventListener("click", () => { if (pendingSave) { pendingSave.doShare(); closeSaveSheet(); } });
 if ($("saveCopy")) $("saveCopy").addEventListener("click", () => { if (pendingSave) { pendingSave.doCopy(); closeSaveSheet(); } });
 if ($("saveCancel")) $("saveCancel").addEventListener("click", closeSaveSheet);
@@ -3404,7 +3651,7 @@ function runDemo() {
   }
   resize();
   if (PRELOADED && PRELOADED.text != null) openProgram(PRELOADED.text, PRELOADED.filename, true);
-  else { original = ""; ed.value = ""; resetHist(); renderDecor(); if (!window.__PWA_BUILD__) toast("Abra o arrastre un archivo .NCD"); }
+  else { original = ""; accepted = ""; ed.value = ""; previewSim = null; resetHist(); renderDecor(); updatePendingUI(); toast("Abra o arrastre un archivo .NCD"); }
   runDemo();
   requestAnimationFrame(tick);
 })();
@@ -3430,6 +3677,14 @@ window.__vf = {
   origSim: function () { return origSim; },
   followCursor: function () { return followCursor; },
   reparse: reparse,
+  applyAccepted: applyAccepted,
+  refreshPreview: refreshPreview,
+  acceptEdits: acceptEdits,
+  cancelEdits: cancelEdits,
+  hasPending: hasPending,
+  acceptedText: function () { return accepted; },
+  previewSim: function () { return previewSim; },
+  previewChangedBlocks: previewChangedBlocks,
   setEditorText: setEditorText,
   editorCursorLine: editorCursorLine,
   getView: function () { return { cz: view.cz, cr: view.cr, s: view.s, ready: view.ready, w: cw(), h: chh() }; },
@@ -3517,10 +3772,16 @@ window.__vf = {
       plotLegend: box("plotLegend"), pickInfo: box("pickInfo"), prefsSheet: box("prefsSheet"),
       prefColors: box("prefColors"), colG00: box("colG00"), btnResetColors: box("btnResetColors"),
       btnGoCode: box("btnGoCode"),
+      pendingBar: box("pendingBar"), btnAccept: box("btnAccept"), btnCancelEdit: box("btnCancelEdit"),
+      pendingBadge: box("pendingBadge"),
       followCursorOn: !!followCursor,
       splitFrac: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--split-frac")) || 0.45,
       kbOpen: $("app").classList.contains("kb-open"),
       edited: !!(ed && original && ed.value !== original),
+      pending: hasPending(),
+      acceptedEqOriginal: accepted === original,
+      previewCount: previewSim ? previewChangedBlocks().length : 0,
+      hasPreviewSim: !!(previewSim && previewSim.blocks),
       hasOrigSim: !!(origSim && origSim.blocks),
       selected: selectedInfo(),
       gColors: { 0: gColors[0], 1: gColors[1], 2: gColors[2], 3: gColors[3] },
