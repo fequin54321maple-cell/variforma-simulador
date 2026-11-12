@@ -128,14 +128,44 @@
   .badge.pending { background: rgba(245,185,66,.16); color: #f5b942; border-color: #f5b942; white-space: nowrap; }
   html.layout-mobile .app.mob-editor #pendingBadge { display: none; }
   .pending-bar {
-    display: none; flex: none; align-items: center; gap: 8px; flex-wrap: wrap;
-    padding: 6px 8px; background: rgba(245,185,66,.12); border-bottom: 1px solid #8a6a22;
-    color: #f5b942; font-size: 13px;
+    display: none;
+    flex: none;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 6px;
+    box-sizing: border-box;
+    height: 44px;
+    min-height: 44px;
+    max-height: 44px;
+    padding: 0 8px;
+    background: rgba(245,185,66,.14);
+    border-bottom: 1px solid #8a6a22;
+    color: #f5b942;
+    font-size: 13px;
+    position: relative;
+    overflow: hidden;
+    z-index: 6;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding-left: max(8px, var(--sal));
+    padding-right: max(8px, var(--sar));
   }
   .pending-bar.show { display: flex; }
-  .pending-bar .pending-msg { flex: 1 1 auto; min-width: 10em; font-weight: 650; }
-  .pending-bar .pending-actions { display: flex; gap: 8px; flex: none; }
-  .pending-bar .btn { min-height: 44px; padding: 6px 14px; }
+  .pending-bar .pending-msg {
+    flex: 1 1 auto; min-width: 0; font-weight: 650;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .pending-bar .pending-actions { display: flex; gap: 4px; flex: none; }
+  .pending-bar .btn, html.layout-mobile .pending-bar .btn {
+    width: 44px; height: 44px; min-width: 44px; min-height: 44px;
+    padding: 0; margin: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px; line-height: 1; font-weight: 700;
+    border-radius: 6px;
+  }
+  .tbtn.pending-tool { display: none; color: #f5b942; border-color: #8a6a22; }
+  .app.has-pending .tbtn.pending-tool { display: inline-flex; }
   #savePendingNote { color: #f5b942; font-size: 13px; margin: 0 0 10px; }
   .hdr-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .btn { background: var(--bg3); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; }
@@ -303,7 +333,7 @@
   }
   html.layout-mobile .app {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr) auto auto;
     grid-template-areas: "hdr" "stage" "ctrl" "tabs";
     height: 100%;
@@ -313,8 +343,11 @@
     overflow: hidden;
     min-height: 0;
   }
+  html.layout-mobile .app > * { min-width: 0; max-width: 100%; }
   html.layout-mobile header {
     grid-area: hdr;
+    min-width: 0;
+    overflow: hidden;
     padding: 6px 10px;
     padding-top: max(6px, var(--sat));
     padding-left: max(10px, var(--sal));
@@ -466,10 +499,15 @@
   html.layout-mobile .edbar .btn { min-height: var(--ui-tap); padding: 8px 12px; font-size: var(--ui-font-m); }
   html.layout-mobile .edbar label.chk { font-size: var(--ui-font-m); min-height: var(--ui-tap); }
   html.layout-mobile .pending-bar {
-    padding: 6px 8px; font-size: var(--ui-font-m); gap: 8px;
+    display: none;
+    padding: 0 8px;
+    font-size: var(--ui-font-m);
+    gap: 6px;
+    height: 44px; min-height: 44px; max-height: 44px;
   }
-  html.layout-mobile .pending-bar .btn {
-    min-height: var(--ui-tap); min-width: 96px; font-size: var(--ui-font-m);
+  html.layout-mobile .app.mob-editor.has-pending .pending-bar.show {
+    display: flex;
+    grid-area: pending;
   }
   html.layout-mobile .edstatus {
     flex-wrap: nowrap;
@@ -553,6 +591,16 @@
   }
   html.layout-mobile .app.kb-open .controls,
   html.layout-mobile .app.kb-open .mob-tabs { display: none; }
+  html.layout-mobile .app.mob-editor.has-pending {
+    grid-template-areas: "hdr" "stage" "split" "pending" "editor" "ctrl" "tabs";
+    grid-template-rows:
+      auto
+      minmax(88px, var(--split-top))
+      11px
+      44px
+      minmax(72px, var(--split-bot))
+      auto auto;
+  }
   html.layout-mobile .app.mob-editor.kb-open {
     grid-template-areas: "hdr" "stage" "split" "editor";
     grid-template-rows:
@@ -561,6 +609,17 @@
       11px
       minmax(64px, var(--split-bot));
   }
+  html.layout-mobile .app.mob-editor.kb-open.has-pending {
+    grid-template-areas: "hdr" "stage" "split" "pending" "editor";
+    grid-template-rows:
+      auto
+      minmax(56px, var(--split-top))
+      11px
+      44px
+      minmax(64px, var(--split-bot));
+  }
+  html.layout-mobile .app.mob-editor.kb-open .edbar,
+  html.layout-mobile .app.mob-editor.kb-open .edstatus { display: none; }
 
   @media (orientation: landscape) {
     html.layout-mobile .app.mob-editor {
@@ -598,6 +657,30 @@
         minmax(140px, var(--split-bot));
       grid-template-rows: auto minmax(0, 1fr);
       grid-template-areas: "hdr hdr hdr" "stage split editor";
+    }
+    html.layout-mobile .app.mob-editor.has-pending {
+      grid-template-columns:
+        minmax(120px, var(--split-top))
+        11px
+        minmax(160px, var(--split-bot));
+      grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+      grid-template-areas:
+        "hdr hdr hdr"
+        "stage split pending"
+        "stage split editor"
+        "ctrl ctrl ctrl"
+        "tabs tabs tabs";
+    }
+    html.layout-mobile .app.mob-editor.kb-open.has-pending {
+      grid-template-columns:
+        minmax(100px, var(--split-top))
+        11px
+        minmax(140px, var(--split-bot));
+      grid-template-rows: auto auto minmax(0, 1fr);
+      grid-template-areas:
+        "hdr hdr hdr"
+        "stage split pending"
+        "stage split editor";
     }
   }
   html.layout-mobile .app.mob-data #pane-data { display: flex; }
@@ -699,7 +782,7 @@
     <h1><span class="hdr-full">Simulador de trayectorias </span><span>Variforma</span></h1>
     <div class="fname" id="fname">—</div>
     <span class="badge" id="editBadge" hidden>editado</span>
-    <span class="badge pending" id="pendingBadge" hidden>cambios sin aceptar</span>
+    <span class="badge pending" id="pendingBadge" hidden>Sin aceptar</span>
     <div class="hdr-actions">
       <button class="btn icon-btn" id="btnPrefs" type="button" title="Tamaño, disposición y colores" aria-label="Ajustes de pantalla">⚙</button>
       <span class="dropbar">Arrastre un .NCD aquí o</span>
@@ -732,6 +815,8 @@
           <div class="readout" id="readout"></div>
         </div>
         <div class="tools">
+          <button class="tbtn pending-tool" id="btnAcceptPlot" type="button" hidden title="Aceptar edición" aria-label="Aceptar">✓</button>
+          <button class="tbtn pending-tool" id="btnCancelPlot" type="button" hidden title="Cancelar edición" aria-label="Cancelar">✕</button>
           <button class="tbtn" id="zIn" type="button" title="Acercar (rueda del ratón: zoom en el cursor)">＋</button>
           <button class="tbtn" id="zOut" type="button" title="Alejar">－</button>
           <button class="tbtn" id="zFit" type="button" title="Encajar todo">Encajar</button>
@@ -777,13 +862,6 @@
           <label class="chk" title="Las líneas O y de nombre consumen número, como el generador y LE857 (/N0030 es el primer bloque)"><input type="checkbox" id="renCount" checked> O/nombre cuentan</label>
           <label class="chk" title="Agrega N a los bloques que no la tienen (/M9, G04…)"><input type="checkbox" id="renAdd"> numerar bloques sin N</label>
           <button class="btn" id="btnRestore" type="button" title="Volver al programa original (se puede deshacer)">Restaurar original</button>
-        </div>
-        <div class="pending-bar" id="pendingBar" hidden>
-          <span class="pending-msg" id="pendingMsg">cambios sin aceptar</span>
-          <div class="pending-actions">
-            <button class="btn primary" type="button" id="btnAccept" title="Confirma la edición: la vista previa pasa a ser la trayectoria">Aceptar</button>
-            <button class="btn" type="button" id="btnCancelEdit" title="Vuelve al texto y la trayectoria de la última versión aceptada">Cancelar</button>
-          </div>
         </div>
         <div class="banner" id="restoreBanner" hidden></div>
         <div class="edwrap" id="edwrap">
@@ -842,6 +920,13 @@
     </aside>
   </div>
   <div class="code-split" id="codeSplit" role="separator" aria-orientation="horizontal" aria-label="Ajustar gráfica y editor"></div>
+  <div class="pending-bar" id="pendingBar" hidden>
+    <span class="pending-msg" id="pendingMsg">Sin aceptar</span>
+    <div class="pending-actions">
+      <button class="btn primary" type="button" id="btnAccept" title="Aceptar: la vista previa pasa a ser la trayectoria" aria-label="Aceptar">✓</button>
+      <button class="btn" type="button" id="btnCancelEdit" title="Cancelar: vuelve a la última versión aceptada" aria-label="Cancelar">✕</button>
+    </div>
+  </div>
   <nav class="mob-tabs" id="mobTabs" aria-label="Secciones">
     <button type="button" class="mob-tab on" data-mob="plot" aria-current="page">Gráfica</button>
     <button type="button" class="mob-tab" data-mob="editor">Código</button>
@@ -1958,21 +2043,38 @@ function reparse(opts) {
   if (opts.apply || opts.fit || opts.resetTime || !hasPending()) applyAccepted(opts);
   else refreshPreview(opts);
 }
+function placePendingBar() {
+  const bar = $("pendingBar");
+  if (!bar) return;
+  if (isMobileLayout()) {
+    const split = $("codeSplit");
+    if (split && split.parentNode && bar.previousElementSibling !== split) {
+      split.parentNode.insertBefore(bar, split.nextSibling);
+    }
+  } else {
+    const side = $("side");
+    if (side && bar.parentNode !== side) side.insertBefore(bar, side.firstChild);
+  }
+}
 function updatePendingUI() {
   const pend = hasPending();
+  placePendingBar();
   const bar = $("pendingBar");
   if (bar) { bar.hidden = !pend; bar.classList.toggle("show", pend); }
-  if ($("btnAccept")) $("btnAccept").disabled = !pend;
-  if ($("btnCancelEdit")) $("btnCancelEdit").disabled = !pend;
+  ["btnAccept", "btnCancelEdit", "btnAcceptPlot", "btnCancelPlot"].forEach(id => {
+    const el = $(id);
+    if (!el) return;
+    el.disabled = !pend;
+    if (id === "btnAcceptPlot" || id === "btnCancelPlot") el.hidden = !pend;
+  });
   const pb = $("pendingBadge");
   if (pb) pb.hidden = !pend;
   const editedAccepted = !!(accepted && original && accepted !== original);
   if ($("editBadge")) $("editBadge").hidden = !editedAccepted || pend;
   const n = (previewSim && previewChangedBlocks().length) || 0;
   if ($("pendingMsg")) {
-    $("pendingMsg").textContent = n
-      ? ("cambios sin aceptar · " + n + " tramo(s) en vista previa")
-      : "cambios sin aceptar";
+    $("pendingMsg").textContent = "Sin aceptar";
+    $("pendingMsg").title = n ? ("Sin aceptar · " + n + " tramo(s) en vista previa") : "Sin aceptar";
   }
   if ($("app")) $("app").classList.toggle("has-pending", pend);
 }
@@ -2149,7 +2251,7 @@ function updateStatus() {
   const ln = statusLineOverride || lineOfOffset(ed.selectionStart || 0);
   const e = findings.filter(f => f.level === "error").length, w = findings.filter(f => f.level === "warning").length;
   $("edStatus").innerHTML = "<span>Línea " + ln + " / " + lineCount() + "</span><span>" + diffInfo.changed + " línea(s) cambiada(s)</span>" +
-    (hasPending() ? '<span style="color:#f5b942">cambios sin aceptar</span>' : "") +
+    (hasPending() ? '<span style="color:#f5b942">Sin aceptar</span>' : "") +
     '<span style="color:' + (e ? "var(--err)" : "inherit") + '">' + e + " error(es)</span>" +
     '<span style="color:' + (w ? "var(--warn)" : "inherit") + '">' + w + " aviso(s)</span>" +
     "<span>Autoguardado: " + autosaveState + "</span>";
@@ -3132,6 +3234,7 @@ function syncLayout() {
   const want = wantMobile();
   document.documentElement.classList.toggle("layout-mobile", want);
   $("app").classList.toggle("layout-mobile", want);
+  placePendingBar();
   if (want) {
     if (!$("app").dataset.mobTab) setMobTab("plot");
     syncCheckboxes();
@@ -3310,9 +3413,62 @@ function keepEditorLineVisible() {
   if (!ed) return;
   const line = editorCursorLine();
   const lh = lineH();
+  const pad = $("edwrap") ? 4 : 0;
   const top = (line - 1) * lh;
-  const vis0 = editorViewScroll.y, vis1 = vis0 + Math.max(0, (ed.clientHeight || 0) - 2 * lh);
-  if (top < vis0 || top > vis1) scrollEditorToLine(line, 0.25);
+  const ch = Math.max(0, (ed.clientHeight || 0) - pad);
+  const vis0 = editorViewScroll.y, vis1 = vis0 + Math.max(0, ch - lh);
+  if (top < vis0 || top + lh > vis1) scrollEditorToLine(line, 0.3);
+  return pendingEditorLayout();
+}
+function pendingEditorLayout() {
+  const bar = $("pendingBar");
+  const wrap = $("edwrap") || ed;
+  const edEl = ed;
+  function box(el) {
+    if (!el) return null;
+    const r = el.getBoundingClientRect(), cs = getComputedStyle(el);
+    if (cs.display === "none" || cs.visibility === "hidden" || el.hidden) return null;
+    return { top: r.top, left: r.left, bottom: r.bottom, right: r.right, w: r.width, h: r.height, display: cs.display };
+  }
+  function overlap(a, b, pad) {
+    if (!a || !b) return false;
+    pad = pad == null ? 0.5 : pad;
+    return a.left < b.right - pad && a.right > b.left + pad && a.top < b.bottom - pad && a.bottom > b.top + pad;
+  }
+  const barBox = (bar && !bar.hidden && bar.classList.contains("show")) ? box(bar) : null;
+  const edBox = box(edEl);
+  const wrapBox = box(wrap);
+  const vis = (edBox && wrapBox) ? {
+    top: Math.max(edBox.top, wrapBox.top),
+    left: Math.max(edBox.left, wrapBox.left),
+    bottom: Math.min(edBox.bottom, wrapBox.bottom),
+    right: Math.min(edBox.right, wrapBox.right)
+  } : (edBox || wrapBox);
+  if (vis) { vis.w = Math.max(0, vis.right - vis.left); vis.h = Math.max(0, vis.bottom - vis.top); }
+  const vv = window.visualViewport;
+  const vvBox = {
+    top: vv ? vv.offsetTop : 0,
+    left: vv ? vv.offsetLeft : 0,
+    bottom: (vv ? vv.offsetTop : 0) + ((vv && vv.height) || window.innerHeight),
+    right: (vv ? vv.offsetLeft : 0) + ((vv && vv.width) || window.innerWidth)
+  };
+  const line = editorCursorLine();
+  const lh = lineH();
+  const pad = 4;
+  const lineTop = (wrapBox ? wrapBox.top : (edBox ? edBox.top : 0)) + pad + (line - 1) * lh - (editorViewScroll.y || 0);
+  const cursor = { line: line, top: lineTop, bottom: lineTop + lh, left: vis ? vis.left : 0, right: vis ? vis.right : 0, h: lh };
+  const barOverlapsEditor = overlap(barBox, vis, 1);
+  const barOverlapsCursor = overlap(barBox, cursor, 1);
+  const cursorInEditor = !!(vis && vis.h >= 8 && cursor.bottom > vis.top + 1 && cursor.top < vis.bottom - 1);
+  const cursorInViewport = cursor.bottom > vvBox.top + 1 && cursor.top < vvBox.bottom - 1;
+  return {
+    bar: barBox, editor: vis, cursor: cursor, viewport: vvBox,
+    barOverlapsEditor: barOverlapsEditor,
+    barOverlapsCursor: barOverlapsCursor,
+    cursorVisible: cursorInEditor && cursorInViewport && !barOverlapsCursor,
+    barSingleRow: !!(barBox && barBox.h > 0 && barBox.h <= 52),
+    barCompact: !!(barBox && barBox.h >= 36 && barBox.h <= 52)
+  };
 }
 function blocksForLine(line) {
   if (!sim || !line) return [];
@@ -3513,6 +3669,8 @@ if ($("saveAcceptDownload")) $("saveAcceptDownload").addEventListener("click", (
 });
 if ($("btnAccept")) $("btnAccept").addEventListener("click", () => acceptEdits());
 if ($("btnCancelEdit")) $("btnCancelEdit").addEventListener("click", () => cancelEdits());
+if ($("btnAcceptPlot")) $("btnAcceptPlot").addEventListener("click", () => acceptEdits());
+if ($("btnCancelPlot")) $("btnCancelPlot").addEventListener("click", () => cancelEdits());
 if ($("saveShare")) $("saveShare").addEventListener("click", () => { if (pendingSave) { pendingSave.doShare(); closeSaveSheet(); } });
 if ($("saveCopy")) $("saveCopy").addEventListener("click", () => { if (pendingSave) { pendingSave.doCopy(); closeSaveSheet(); } });
 if ($("saveCancel")) $("saveCancel").addEventListener("click", closeSaveSheet);
@@ -3672,6 +3830,7 @@ window.__vf = {
   setFollowCursor: setFollowCursor,
   syncCursorOnPlot: syncCursorOnPlot,
   keepEditorLineVisible: keepEditorLineVisible,
+  pendingEditorLayout: pendingEditorLayout,
   refreshOrigSim: refreshOrigSim,
   isChangedBlock: function (b) { return isChangedBlock(b, origBlockMap()); },
   origSim: function () { return origSim; },
@@ -3773,7 +3932,8 @@ window.__vf = {
       prefColors: box("prefColors"), colG00: box("colG00"), btnResetColors: box("btnResetColors"),
       btnGoCode: box("btnGoCode"),
       pendingBar: box("pendingBar"), btnAccept: box("btnAccept"), btnCancelEdit: box("btnCancelEdit"),
-      pendingBadge: box("pendingBadge"),
+      pendingBadge: box("pendingBadge"), btnAcceptPlot: box("btnAcceptPlot"), btnCancelPlot: box("btnCancelPlot"),
+      pendingLayout: pendingEditorLayout(),
       followCursorOn: !!followCursor,
       splitFrac: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--split-frac")) || 0.45,
       kbOpen: $("app").classList.contains("kb-open"),
