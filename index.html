@@ -943,7 +943,7 @@
           <button class="btn" id="btnUndo" type="button" title="Deshacer (Ctrl+Z)">↶ Deshacer</button>
           <button class="btn" id="btnRedo" type="button" title="Rehacer (Ctrl+Y / Ctrl+Mayús+Z)">↷ Rehacer</button>
           <button class="btn" id="btnRenum" type="button" title="Renumerar N0010, paso 10, conservando el prefijo /">Renumerar N</button>
-          <label class="chk" title="Las líneas O y de nombre consumen número, como el generador y LE857 (/N0030 es el primer bloque)"><input type="checkbox" id="renCount" checked> O/nombre cuentan</label>
+          <label class="chk" title="Las líneas O y de nombre consumen número, como el generador y los programas reales (/N0030 es el primer bloque)"><input type="checkbox" id="renCount" checked> O/nombre cuentan</label>
           <label class="chk" title="Agrega N a los bloques que no la tienen (/M9, G04…)"><input type="checkbox" id="renAdd"> numerar bloques sin N</label>
           <button class="btn" id="btnRestore" type="button" title="Volver al programa original (se puede deshacer)">Restaurar original</button>
         </div>
@@ -1090,7 +1090,7 @@
           <input type="text" id="subTimes" value="" placeholder="p. ej. P1000=20, P2991=5" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Tiempo supuesto de subprogramas externos">
         </label>
         <p class="pref-note">Los M98 P#### que no están en el archivo (subprogramas de la máquina) cuentan 0 s. Ponga aquí su duración para que las esperas salgan reales. <b>P1000 (pintura)</b> = lo que tarda la pistola en llegar de la base del rin al tope; cronométrelo y escriba p. ej. <code>P1000=18</code>. Las pausas G04 (G04 X1. = 1 s) ya se cuentan solas.</p>
-        <label class="chk"><input type="checkbox" id="dualSwap"> Cabeza 1 a la derecha (invertir lados)</label>
+        <label class="chk"><input type="checkbox" id="dualSwap"> Invertir lados (Cabeza 1 a la izquierda)</label>
         <label class="chk"><input type="checkbox" id="dualZDown"> Z mayor hacia abajo</label>
       </div>
       <div class="pref-sec"><a class="btn" id="lnkModePrefs" href="dos_cabezas.html" hidden>Simulador de 2 cabezas →</a></div>
@@ -1775,7 +1775,7 @@ function lintNC(text, opts) {
   return issues;
 }
 
-// Línea de nombre de programa justo después de un O (COPA1HMRA, N114HMRA, LE857HSRA).
+// Línea de nombre de programa justo después de un O (COPA1HMRA, PIEZA2HMRA).
 function isNameAfterO(body) {
   const s = (body || "").trim();
   if (!/^[A-Za-z0-9_\-.]{2,32}$/.test(s)) return false;
@@ -2134,22 +2134,24 @@ function lineCodeHints(line) {
 }
 
 /* Asignación automática de dos archivos a Cabeza 1 / Cabeza 2.
-   Corrección de Julio (2026-11-13): la cabeza con el R5 (T0005/T0205), la pintura (M98 P1000, M9)
-   y el quemador (M34) es la CABEZA 2 (lado derecho); Cabeza 1 (izquierda) hace 3 pasadas R12. */
-function paintHeadEvidence(text) {
+   Distribución confirmada por Julio con video (2026-11-13): CABEZA 1 (derecha) lleva R12 + R5 (T0005/T0205);
+   CABEZA 2 (izquierda) lleva la pistola de diecoat (M9/M10) + R12. Si un archivo trae las dos cosas,
+   gana el R5 (→ Cabeza 1) y se marca como dudoso para revisar con ⇄ Intercambiar. */
+function headEvidence(text) {
   const lines = splitLines(text);
   const body = lines.map(l => stripComments(l)).join("\n");
   const comments = lines.map(l => (l.match(/\([^)]*\)/g) || []).join(" ")).join("\n");
-  const ev = [];
-  const add = (re, src, label, w) => { if (re.test(src)) ev.push({ label: label, w: w }); };
-  add(/\bT\s*0*(?:5|205)(?!\d)/i, body, "T0005/R5", 3);
-  add(/\bR\s*5\b(?!\.\d)/i, comments, "R5 (comentario)", 1);
-  add(/\bM\s*98\s*P\s*0*1000(?!\d)/i, body, "M98 P1000 (pintura)", 2);
-  add(/\bM\s*0*9(?!\d)/i, body, "M9 (spray)", 1);
-  add(/\bM\s*34(?!\d)/i, body, "M34", 1);
-  return ev;
+  const r5 = [], spray = [];
+  const add = (arr, re, src, label, w) => { if (re.test(src)) arr.push({ label: label, w: w }); };
+  add(r5, /\bT\s*0*(?:5|205)(?!\d)/i, body, "T0005/R5", 3);
+  add(r5, /\bR\s*5\b(?!\.\d)/i, comments, "R5 (comentario)", 1);
+  add(spray, /\bM\s*0*9(?!\d)/i, body, "M9 (diecoat)", 2);
+  add(spray, /\bM\s*98\s*P\s*0*1000(?!\d)/i, body, "M98 P1000", 1);
+  add(spray, /\b(DIECOAT|DIE\s*COAT|PISTOLA|SPRAY|DAIKO)\b/i, comments, "pistola (comentario)", 1);
+  return { r5: r5, spray: spray, r5w: r5.reduce((x, e) => x + e.w, 0), sprayw: spray.reduce((x, e) => x + e.w, 0) };
 }
-function paintHeadScore(text) { return paintHeadEvidence(text).reduce((a, e) => a + e.w, 0); }
+/* > 0: parece Cabeza 1 (R5); < 0: parece Cabeza 2 (diecoat). El R5 pesa más. */
+function head1Lean(ev) { return ev.r5w > 0 ? 100 + ev.r5w - ev.sprayw : -ev.sprayw; }
 function headHintFromName(name) {
   const n = String(name || "");
   if (/(HEAD|CABEZA|CAB|PATH|C)\s*[-_ ]?2(?!\d)|_2(\.|$)/i.test(n)) return 2;
@@ -2158,17 +2160,23 @@ function headHintFromName(name) {
 }
 /* a, b: { name, text } en el orden en que se eligieron. */
 function assignHeads(a, b) {
-  const sa = paintHeadScore(a.text), sb = paintHeadScore(b.text);
+  const ea = headEvidence(a.text), eb = headEvidence(b.text);
+  const la = head1Lean(ea), lb = head1Lean(eb);
   let swap = false, method = "orden";
-  if (sa !== sb) { swap = sa > sb; method = "contenido"; }   // la de pintura/R5 va a Cabeza 2
+  if (la !== lb) { swap = lb > la; method = "contenido"; }
   else {
     const ha = headHintFromName(a.name), hb = headHintFromName(b.name);
     if ((ha === 2 && hb !== 2) || (hb === 1 && ha !== 1)) { swap = true; method = "nombre"; }
     else if (ha === 1 || hb === 2) method = "nombre";
   }
-  const h1 = swap ? b : a, h2 = swap ? a : b;
-  return { head1: h1, head2: h2, swapped: swap, method: method,
-           evidence: paintHeadEvidence(h2.text).map(e => e.label), evidence1: paintHeadEvidence(h1.text).map(e => e.label) };
+  const h1 = swap ? b : a, h2 = swap ? a : b, e1 = swap ? eb : ea, e2 = swap ? ea : eb;
+  const mixed = [e1, e2].some(e => e.r5w > 0 && e.sprayw > 0);
+  const ambiguous = method === "contenido" && (mixed || (e1.r5w === 0 && e2.sprayw === 0));
+  const evidence = e1.r5.map(e => "C1: " + e.label).concat(e2.spray.map(e => "C2: " + e.label));
+  return { head1: h1, head2: h2, swapped: swap, method: method, evidence: evidence, ambiguous: ambiguous,
+           note: ambiguous ? (mixed ? "Un archivo trae R5 y pintura a la vez; se puso el R5 en Cabeza 1. Revise y use ⇄ Intercambiar si está al revés."
+                                    : "Asignación dudosa; revise y use ⇄ Intercambiar si está al revés.") : "",
+           evidence1: e1.r5.concat(e1.spray).map(e => e.label), evidence2: e2.r5.concat(e2.spray).map(e => e.label) };
 }
 /* "P1000=20, 2991=5" → { 1000: 20, 2991: 5 } */
 function parseSubTimes(spec) {
@@ -2226,7 +2234,7 @@ let active = 0, heads = [null, null], dualSync = null, globalT = 0, lastDerivedT
 let headColors = DEFAULT_HEAD_COLORS.slice(), waitSpec = DEFAULT_WAIT_SPEC, dualSwap = false, dualZDown = false, dualLoading = false;
 let subTimes = {}, subTimesSpec = "", sideBySide = false, lastAssign = null;
 function zDirV() { return dualZDown ? -1 : 1; }
-function signOf(h) { return ((h === 1) !== !!dualSwap) ? 1 : -1; }   // Cabeza 2 a la derecha, Cabeza 1 a la izquierda
+function signOf(h) { return ((h === 0) !== !!dualSwap) ? 1 : -1; }   // Cabeza 1 (R12 + R5) a la derecha, Cabeza 2 (diecoat + R12) a la izquierda
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c]));
@@ -4441,10 +4449,11 @@ function dualLoadAssigned(a, b) {
   const r = assignHeads(a, b);
   dualLoadPair(r.head1.text, r.head1.name, r.head2.text, r.head2.name, false);
   dualRemember();
-  lastAssign = { name1: r.head1.name, name2: r.head2.name, method: r.method, evidence: r.evidence, swapped: r.swapped, manual: false };
+  lastAssign = { name1: r.head1.name, name2: r.head2.name, method: r.method, evidence: r.evidence, swapped: r.swapped, manual: false,
+                 ambiguous: !!r.ambiguous, note: r.note || "" };
   renderAssignInfo();
-  toast("Cabeza 1 ← " + r.head1.name + " · Cabeza 2 ← " + r.head2.name + (r.evidence.length ? " (" + r.evidence.join(", ") + ")" : "") +
-    (r.method === "orden" ? " (por orden)" : "") + ". Si está al revés: ⇄ Intercambiar.", 5200);
+  toast((r.ambiguous ? "⚠ " : "") + "Cabeza 1 ← " + r.head1.name + " · Cabeza 2 ← " + r.head2.name + (r.evidence.length ? " (" + r.evidence.join(", ") + ")" : "") +
+    (r.method === "orden" ? " (por orden)" : "") + ". " + (r.note || "Si está al revés: ⇄ Intercambiar."), r.ambiguous ? 8000 : 5200);
   return r;
 }
 function dualReadTwo(f1, f2) {
@@ -4458,7 +4467,8 @@ function renderAssignInfo() {
     lastAssign.method === "nombre" ? "por el nombre" : "por orden de selección";
   el.hidden = false;
   el.innerHTML = '<b style="color:' + headColor(0) + '">C1</b> ← ' + escapeHtml(lastAssign.name1) + ' · <b style="color:' + headColor(1) + '">C2</b> ← ' +
-    escapeHtml(lastAssign.name2) + " <span>(" + escapeHtml(why) + ")</span>";
+    escapeHtml(lastAssign.name2) + " <span>(" + escapeHtml(why) + ")</span>" +
+    (lastAssign.ambiguous && !lastAssign.manual ? ' <b style="color:#f5b942">⚠ ' + escapeHtml(lastAssign.note) + "</b>" : "");
   el.title = el.textContent;
   renderSyncInfo();
 }
@@ -4779,7 +4789,8 @@ function renderSyncInfo() {
   });
   if (lastAssign) {
     h += '<div class="sp">Archivos: Cabeza 1 ← ' + escapeHtml(lastAssign.name1) + " · Cabeza 2 ← " + escapeHtml(lastAssign.name2) + " (" +
-      escapeHtml(lastAssign.manual ? "intercambiado a mano" : lastAssign.method === "contenido" ? lastAssign.evidence.join(", ") : lastAssign.method === "nombre" ? "por el nombre" : "por orden") + ")</div>";
+      escapeHtml(lastAssign.manual ? "intercambiado a mano" : lastAssign.method === "contenido" ? lastAssign.evidence.join(", ") : lastAssign.method === "nombre" ? "por el nombre" : "por orden") + ")" +
+      (lastAssign.ambiguous && !lastAssign.manual ? ' <b style="color:#f5b942">⚠ ' + escapeHtml(lastAssign.note) + "</b>" : "") + "</div>";
   }
   h += '<div class="sp">Ciclo: HEAD1 ' + fmtTime(dualSync.ends[0]) + " · HEAD2 " + fmtTime(dualSync.ends[1]) + " · total " + fmtTime(dualSync.total) + "</div>";
   el.innerHTML = h;
@@ -4794,7 +4805,7 @@ function loadDualPrefs() {
   subTimes = parseSubTimes(subTimesSpec);
   sideBySide = !!ui.sideBySide;
   if ($("subTimes")) $("subTimes").value = subTimesSpec;
-  dualSwap = !!ui.dualSwapV2; dualZDown = !!ui.dualZDown;
+  dualSwap = !!ui.dualSwapV3; dualZDown = !!ui.dualZDown;
   if ($("colH1")) $("colH1").value = headColors[0];
   if ($("colH2")) $("colH2").value = headColors[1];
   if ($("waitSpec")) $("waitSpec").value = waitSpec;
@@ -4837,7 +4848,7 @@ function setSubTimes(spec) {
 function setDualView(opts) {
   if ("swap" in opts) dualSwap = !!opts.swap;
   if ("zDown" in opts) dualZDown = !!opts.zDown;
-  saveUi({ dualSwapV2: dualSwap, dualZDown: dualZDown });
+  saveUi({ dualSwapV3: dualSwap, dualZDown: dualZDown });
   curSign = signOf(active);
   fitAll(); redraw();
 }
