@@ -1089,7 +1089,7 @@
         <label class="pref-field">Tiempo de subprogramas externos (s)
           <input type="text" id="subTimes" value="" placeholder="p. ej. P1000=20, P2991=5" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Tiempo supuesto de subprogramas externos">
         </label>
-        <p class="pref-note">Los M98 P#### que no están en el archivo (subprogramas de la máquina) cuentan 0 s. Ponga aquí su duración para que las esperas salgan reales. <b>P1000 (pintura)</b> = lo que tarda la pistola en llegar de la base del rin al tope; cronométrelo y escriba p. ej. <code>P1000=18</code>. Las pausas G04 (G04 X1. = 1 s) ya se cuentan solas.</p>
+        <p class="pref-note">Los M98 P#### que no están en el archivo (subprogramas de la máquina) cuentan 0 s por defecto. Ponga aquí su duración para que las esperas salgan reales, p. ej. <code>P1000=20, P2991=5</code>. Las pausas G04 (G04 X1. = 1 s) ya se cuentan solas.</p>
         <label class="chk"><input type="checkbox" id="dualSwap"> Invertir lados (Cabeza 1 a la izquierda)</label>
         <label class="chk"><input type="checkbox" id="dualZDown"> Z mayor hacia abajo</label>
       </div>
@@ -1393,10 +1393,11 @@ function simulate(text, opts) {
     }
     const hm = body.match(HASH_ASSIGN);
     if (hm && !words.G && !words.M && !words.X) {
-      st.notes.push("L" + sl.line + ": asignación de macro " + hm[0] + " (no se interpreta).");
+      const note = macroAssignNote(hm[0], hm[1]);
+      st.notes.push("L" + sl.line + ": " + note);
       emit({ line: sl.line, o_number: sl.o_number, n: extractN(raw, body),
              text: (raw || body).trim(), raw, block_delete: sl.block_delete,
-             kind: "event", dt: 0, events: ["Macro " + hm[0]], comment });
+             kind: "event", dt: 0, events: ["Macro " + hm[0] + (MACRO_NOTES[parseInt(hm[1], 10)] ? " — " + MACRO_NOTES[parseInt(hm[1], 10)] : "")], comment });
       return;
     }
 
@@ -2116,9 +2117,31 @@ function g04Seconds(body) {
   return x != null ? x : pp != null ? pp / 1000 : u != null ? u : 0;
 }
 /* Pistas de una línea del editor: [{kind:"m"|"dwell", code, text}] */
-function lineCodeHints(line) {
+const MACRO_NOTES = {
+  535: "número de pasadas (los programas se escriben de 6 y luego se editan a 5 o 4)"
+};
+function macroAssignNote(raw, num) {
+  const meaning = MACRO_NOTES[parseInt(num, 10)];
+  return meaning ? ("asignación de macro " + raw + " — " + meaning + ".") : ("asignación de macro " + raw + " (no se interpreta).");
+}
+function programHasO(text, p) {
+  if (text == null || text === "") return null;
+  return new RegExp("(^|\\n)\\s*/?\\s*O0*" + Number(p) + "(?!\\d)", "im").test(String(text));
+}
+function m98Hint(p, hasLocal) {
+  if (p === 1000) return "P1000 = parámetro 1 (subprograma externo)";
+  const tx = "M98 P" + p;
+  if (hasLocal === true) return tx + " llamar subprograma";
+  if (hasLocal === false || DEFAULT_EXTERNAL.has(p)) return tx + " subprograma externo";
+  return tx + " llamar subprograma";
+}
+function lineCodeHints(line, programText) {
   const body = stripComments(String(line || "")).replace(/^\s*\//, "").replace(/^\s*N\d+/i, "");
   const out = [];
+  const hm = body.match(HASH_ASSIGN);
+  if (hm && MACRO_NOTES[parseInt(hm[1], 10)]) {
+    out.push({ kind: "macro", code: "#" + hm[1], text: "#" + hm[1] + " = " + MACRO_NOTES[parseInt(hm[1], 10)] });
+  }
   if (/\bG\s*0*4(?![\d.])/i.test(body)) {
     const d = g04Seconds(body.replace(/^[\s\S]*?\bG\s*0*4(?![\d.])/i, ""));
     out.push({ kind: "dwell", code: "G04", s: d, text: "pausa " + (+d.toFixed(3)) + " s" });
@@ -2126,18 +2149,25 @@ function lineCodeHints(line) {
   const re = /\bM\s*(\d+)/gi; let m;
   while ((m = re.exec(body))) {
     const c = parseInt(m[1], 10), lb = mCodeLabel(c);
+    if (c === 98) {
+      const pm = body.match(/\bP\s*(\d+)/i);
+      if (pm) {
+        const p = parseInt(pm[1], 10);
+        out.push({ kind: "m", code: "M98", text: m98Hint(p, programText != null ? programHasO(programText, p) : null) });
+        continue;
+      }
+    }
     if (!lb) continue;
-    let tx = "M" + m[1];
-    if (c === 98) { const pm = body.match(/\bP\s*(\d+)/i); if (pm) tx += " P" + pm[1]; }
-    out.push({ kind: "m", code: "M" + m[1], text: tx + " " + lb });
+    out.push({ kind: "m", code: "M" + m[1], text: "M" + m[1] + " " + lb });
   }
   return out;
 }
 
 /* Asignación automática de dos archivos a Cabeza 1 / Cabeza 2.
-   Distribución confirmada por Julio con video (2026-11-13): CABEZA 1 (derecha) lleva R12 + R5 (T0005/T0205);
-   CABEZA 2 (izquierda) lleva la pistola de diecoat (M9/M10) + R12. Si un archivo trae las dos cosas,
-   gana el R5 (→ Cabeza 1) y se marca como dudoso para revisar con ⇄ Intercambiar. */
+   Distribución confirmada por Julio (2026-11-13): CABEZA 1 (derecha) lleva R12 + R5 (T0005/T0205);
+   CABEZA 2 (izquierda) lleva la pistola de diecoat (M9/M10 y comentarios PISTOLA/DIECOAT/SPRAY/DAIKO) + R12.
+   M98 P1000 es «parámetro 1», no evidencia de pistola. M34/M35 es el quemador, no la pistola.
+   Si un archivo trae R5 y pistola a la vez, gana el R5 (→ Cabeza 1) y se marca como dudoso para revisar con ⇄ Intercambiar. */
 function headEvidence(text) {
   const lines = splitLines(text);
   const body = lines.map(l => stripComments(l)).join("\n");
@@ -2147,7 +2177,6 @@ function headEvidence(text) {
   add(r5, /\bT\s*0*(?:5|205)(?!\d)/i, body, "T0005/R5", 3);
   add(r5, /\bR\s*5\b(?!\.\d)/i, comments, "R5 (comentario)", 1);
   add(spray, /\bM\s*0*9(?!\d)/i, body, "M9 (diecoat)", 2);
-  add(spray, /\bM\s*98\s*P\s*0*1000(?!\d)/i, body, "M98 P1000", 1);
   add(spray, /\b(DIECOAT|DIE\s*COAT|PISTOLA|SPRAY|DAIKO)\b/i, comments, "pistola (comentario)", 1);
   return { r5: r5, spray: spray, r5w: r5.reduce((x, e) => x + e.w, 0), sprayw: spray.reduce((x, e) => x + e.w, 0) };
 }
@@ -2656,7 +2685,7 @@ function renderDecor() {
       escapeHtml(first.message.length > 95 ? first.message.slice(0, 92) + "…" : first.message) + (extra > 0 ? " (+" + extra + ")" : "") + "</span>" : "";
     let hint = "";
     if (!msg) {
-      const hs = lineCodeHints(lines[i]);
+      const hs = lineCodeHints(lines[i], lines.join("\n"));
       if (hs.length) hint = '<span class="im h' + (hs.some(x => x.kind === "dwell") ? " d" : "") + '">◀ ' + escapeHtml(hs.map(x => x.text).join(" · ")) + "</span>";
     }
     bh += '<div class="l ' + cls + '"><span class="t">' + (escapeHtml(lines[i]) || " ") + "</span>" + (msg || hint) + "</div>";
@@ -3076,7 +3105,7 @@ function codeNowInfo(s, t) {
     const c = s.blocks[i];
     if (t - c.t1 > 2.5) break;
     if (c.kind === "skip") continue;
-    const hs = lineCodeHints(c.raw || c.text || "").filter(x => x.kind === "m");
+    const hs = lineCodeHints(c.raw || c.text || "", (typeof accepted === "string" && accepted) || (ed && ed.value) || "").filter(x => x.kind === "m");
     if (hs.length) return { kind: "m", line: c.line, text: hs.map(x => x.text).join(" · ") };
   }
   return null;
@@ -4774,9 +4803,17 @@ function renderSyncInfo() {
     return ps;
   });
   if (ext[0].length || ext[1].length) {
-    const fmtP = ps => ps.map(x => "P" + x + (subTimes[parseInt(x, 10)] ? "=" + subTimes[parseInt(x, 10)] + "s" : "")).join(", ") || "—";
+    const fmtP = ps => ps.map(x => "P" + x + (subTimes[parseInt(x, 10)] ? "=" + subTimes[parseInt(x, 10)] + "s" : "") + (x === "1000" ? " (parámetro 1)" : "")).join(", ") || "—";
     h += '<div class="sp">Subprogramas externos (no están en los archivos): HEAD1 ' + escapeHtml(fmtP(ext[0])) + " · HEAD2 " + escapeHtml(fmtP(ext[1])) +
       ". Sin tiempo en ⚙ cuentan 0 s.</div>";
+  }
+  const macros = [0, 1].map(h2 => {
+    const s2 = simOf(h2); if (!s2) return [];
+    return (s2.notes || []).filter(n => /#535\s*=/.test(n));
+  });
+  if (macros[0].length || macros[1].length) {
+    h += '<div class="sp">#535 = número de pasadas (los programas se escriben de 6 y luego se editan a 5 o 4). ' +
+      [macros[0].length ? ("C1: " + macros[0].join("; ")) : "", macros[1].length ? ("C2: " + macros[1].join("; ")) : ""].filter(Boolean).join(" · ") + "</div>";
   }
   if (!dualSync.pairs.length && !dualSync.issues.length) h += '<div class="sp">Sin esperas: las dos cabezas corren a la vez desde el inicio.</div>';
   dualSync.pairs.forEach(p => {
