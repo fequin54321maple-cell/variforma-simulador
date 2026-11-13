@@ -821,7 +821,7 @@
       <label class="btn primary" id="btnOpen" for="fileIn">Abrir archivo</label>
       <input type="file" id="fileIn" accept=".NCD,.ncd,.nc,.txt,text/plain,application/octet-stream" hidden>
       <button class="btn" id="btnSave" type="button" title="Descarga con CRLF, F sin decimales y sufijo _edit">Guardar .NCD</button>
-      <label class="chk"><input type="checkbox" id="skipBD"> Omitir block delete (/)</label>
+      <label class="chk" title="Apagado (por defecto): se ejecutan las líneas con «/» (p. ej. /M9 /M10 del spray). Encendido: se saltan."><input type="checkbox" id="skipBD" autocomplete="off"> Omitir block delete (/)</label>
       <label class="chk"><input type="checkbox" id="showDisc" checked> Disco del rodillo</label>
       <button class="btn" id="btnPanel" type="button" title="Mostrar u ocultar el panel (editor, hallazgos)">Ocultar panel ▸</button>
       <a class="btn mode-link" id="lnkMode" href="dos_cabezas.html" hidden title="Simulador de dos cabezas (HEAD1 / HEAD2)">2 cabezas</a>
@@ -945,7 +945,7 @@
           <div class="data-sec">
             <h3>Opciones</h3>
             <div class="data-opts">
-              <label class="chk"><input type="checkbox" id="skipBDMob"> Omitir block delete (/)</label>
+              <label class="chk" title="Apagado (por defecto): se ejecutan las líneas con «/» (p. ej. /M9 /M10 del spray). Encendido: se saltan."><input type="checkbox" id="skipBDMob" autocomplete="off"> Omitir block delete (/)</label>
               <label class="chk"><input type="checkbox" id="showDiscMob" checked> Disco del rodillo</label>
             </div>
           </div>
@@ -4523,6 +4523,10 @@ if (DUAL) {
 /* ---------- Arranque ---------- */
 (function init() {
   const ui = uiState();
+  // Block delete apagado por defecto: las líneas con "/" (p. ej. /M9 /M10 del spray) se ejecutan.
+  // No se guarda; el navegador tampoco debe restaurar la casilla al recargar.
+  if ($("skipBD")) $("skipBD").checked = false;
+  if ($("skipBDMob")) $("skipBDMob").checked = false;
   if (ui.sideW) $("side").style.width = ui.sideW;
   if (ui.splitFrac != null) applySplitFrac(ui.splitFrac);
   followCursor = ui.followCursor !== false;
