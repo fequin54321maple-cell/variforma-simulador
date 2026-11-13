@@ -230,6 +230,7 @@
   .pick-info #btnGoCode { flex: none; min-height: 44px; min-width: 44px; padding: 6px 12px; }
   .splitter { width: 7px; cursor: col-resize; background: var(--bg2); border-left: 1px solid var(--line); border-right: 1px solid var(--line); flex: none; }
   .splitter:hover, .splitter.drag { background: #1f3a5a; }
+  .side.sbs { min-width: min(940px, 56vw); }
   .side { width: 34vw; min-width: 280px; max-width: 75vw; display: flex; flex-direction: column; background: var(--bg2); min-height: 0; flex: none; }
   .side.collapsed, .splitter.collapsed { display: none; }
   .tabs { display: flex; border-bottom: 1px solid var(--line); flex: none; }
@@ -536,7 +537,7 @@
     min-height: var(--ui-tap); padding-top: 10px; padding-bottom: 10px; font-size: var(--ui-font-m);
   }
   html.layout-mobile .lintbar, html.layout-mobile .edstatus, html.layout-mobile .notes { font-size: var(--ui-font-m); }
-  html.layout-mobile .toast { grid-area: stage; bottom: calc(var(--ui-tap-lg) + var(--ui-tap) + 32px + var(--sab)); font-size: var(--ui-font-m); }
+  html.layout-mobile .toast { grid-area: stage; bottom: calc(var(--ui-tap-lg) + var(--ui-tap) + 32px + var(--sab)); font-size: var(--ui-font-m);  width: max-content; max-width: 92vw; }
   html.layout-mobile .sheet-back { grid-area: stage; }
   /* Código en móvil: gráfica + editor a la vez, divisor arrastrable. */
   html.layout-mobile .app.mob-editor {
@@ -777,16 +778,41 @@
   /* ---- Dos cabezas ---- */
   .mode-link { text-decoration: none; color: inherit; white-space: nowrap; }
   html.layout-mobile .mode-link { display: none; }
-  .head-bar { display: flex; gap: 4px; padding: 4px 6px; border-bottom: 1px solid var(--line); flex: none; background: var(--bg2); }
+  .head-bar { display: flex; flex-direction: column; gap: 4px; padding: 5px 6px; border-bottom: 1px solid var(--line); flex: none; background: var(--bg2); }
   .head-bar[hidden] { display: none; }
-  .head-btn { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 4px 8px; min-height: 34px;
-    background: var(--bg3); border: 1px solid var(--line); border-radius: 6px; color: var(--muted); text-align: left; touch-action: manipulation; }
-  .head-btn.on { color: var(--text); border-color: var(--hc, var(--accent)); box-shadow: inset 0 -3px 0 var(--hc, var(--accent)); }
-  .head-btn .hdot { width: 10px; height: 10px; border-radius: 50%; background: var(--hc, var(--accent)); flex: none; }
-  .head-btn .hlbl { font-weight: 650; white-space: nowrap; }
+  .head-seg { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--bg3); }
+  .head-btn { flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 7px; padding: 4px 10px; min-height: 46px;
+    background: transparent; border: 0; border-radius: 0; color: var(--muted); text-align: left; touch-action: manipulation; cursor: pointer; }
+  .head-btn + .head-btn { border-left: 1px solid var(--line); }
+  .head-btn.on { color: #fff; background: var(--hcbg, rgba(59,158,255,.22)); box-shadow: inset 0 -4px 0 var(--hc, var(--accent)); }
+  .head-btn .hdot { width: 13px; height: 13px; border-radius: 50%; background: var(--hc, var(--accent)); flex: none; box-shadow: 0 0 0 2px rgba(0,0,0,.35); }
+  .head-btn .hlbl { font-weight: 750; font-size: 15px; white-space: nowrap; }
+  .head-btn.on .hlbl { color: var(--hc, #fff); }
   .head-btn .hsub { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .head-btn.on .hsub { color: #d6dde8; }
   .head-btn .hsub .pend { color: #f5b942; }
-  html.layout-mobile .head-btn { min-height: 36px; font-size: var(--ui-font-m); }
+  html.layout-mobile .head-btn { font-size: var(--ui-font-m); flex-wrap: wrap; row-gap: 0; align-content: center; padding: 2px 10px; }
+  html.layout-mobile .head-btn .hsub { flex: 1 0 100%; padding-left: 20px; font-size: 10.5px; }
+  .load-row { display: flex; gap: 4px; flex-wrap: nowrap; }
+  .load-row .lbtn { flex: 1 1 auto; min-width: 0; min-height: 32px; padding: 3px 6px; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; justify-content: center; text-align: center; }
+  .load-row .lbtn[aria-pressed="true"] { border-color: var(--accent); color: var(--text); background: rgba(59,158,255,.18); }
+  @media (orientation: portrait) { html.layout-mobile .load-row #btnSideBySide { display: none; } }
+  html.layout-mobile .lb-long { display: none; }
+  html.layout-mobile .head-btn { min-height: 42px; }
+  html.layout-mobile .load-row .lbtn { min-height: 30px; }
+  html.layout-mobile.dual header .fname { display: none; }
+  html.layout-mobile .assign-info { display: none; }
+  .assign-info { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; }
+  .assign-info b { font-weight: 700; }
+  .edpair { display: flex; flex: 1; min-height: 0; min-width: 0; gap: 4px; }
+  .edpair > .edwrap { flex: 1 1 0; min-width: 0; }
+  .edpair.both > .edwrap { border-top: 3px solid var(--hc-act, var(--accent)); }
+  .ed2wrap { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; background: #0f141b; border-top: 3px solid var(--hc-oth, var(--line)); }
+  .ed2wrap[hidden] { display: none; }
+  .ed2head { flex: none; font-size: 11.5px; padding: 3px 8px; color: var(--muted); background: var(--bg2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+  .ed2head b { color: var(--hc-oth, var(--text)); }
+  #ed2 { flex: 1; min-height: 0; width: 100%; resize: none; border: 0; outline: none; background: transparent; color: #aeb8c6;
+    font: inherit; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 18px; padding: 4px 8px; white-space: pre; cursor: pointer; }
   .head-strip { position: absolute; top: 44px; right: 8px; z-index: 3; display: flex; flex-direction: column; gap: 4px; max-width: min(360px, 60%); }
   .head-strip[hidden] { display: none; }
   .hchip { display: flex; align-items: center; gap: 6px; padding: 3px 8px; min-height: 30px; text-align: left;
@@ -881,9 +907,20 @@
     </div>
     <div class="splitter" id="splitter" title="Arrastre para cambiar el tamaño · doble clic para ocultar el panel"></div>
     <aside class="side" id="side">
-      <div class="head-bar" id="headBar" hidden role="tablist" aria-label="Cabeza que se edita">
-        <button type="button" class="head-btn on" data-head="0" role="tab" id="headBtn0"><i class="hdot"></i><span class="hlbl">Cabeza 1</span><span class="hsub" id="headSub0"></span></button>
-        <button type="button" class="head-btn" data-head="1" role="tab" id="headBtn1"><i class="hdot"></i><span class="hlbl">Cabeza 2</span><span class="hsub" id="headSub1"></span></button>
+      <div class="head-bar" id="headBar" hidden>
+        <div class="head-seg" role="tablist" aria-label="Cabeza que se edita">
+          <button type="button" class="head-btn on" data-head="0" role="tab" id="headBtn0"><i class="hdot"></i><span class="hlbl">Cabeza 1</span><span class="hsub" id="headSub0"></span></button>
+          <button type="button" class="head-btn" data-head="1" role="tab" id="headBtn1"><i class="hdot"></i><span class="hlbl">Cabeza 2</span><span class="hsub" id="headSub1"></span></button>
+        </div>
+        <div class="load-row" id="loadRow">
+          <label class="btn lbtn" id="btnOpenH0" for="fileInH0" title="Abrir un archivo en Cabeza 1 (HEAD1)" aria-label="Abrir Cabeza 1">📂&nbsp;<span class="lb-long">Abrir&nbsp;</span>Cabeza&nbsp;1</label>
+          <label class="btn lbtn" id="btnOpenH1" for="fileInH1" title="Abrir un archivo en Cabeza 2 (HEAD2)" aria-label="Abrir Cabeza 2">📂&nbsp;<span class="lb-long">Abrir&nbsp;</span>Cabeza&nbsp;2</label>
+          <button class="btn lbtn" type="button" id="btnSwapHeads" title="El programa de Cabeza 1 pasa a Cabeza 2 y al revés">⇄ Intercambiar</button>
+          <button class="btn lbtn" type="button" id="btnSideBySide" aria-pressed="false" title="Ver los dos programas lado a lado (apaisado / escritorio)">◫ Ver ambas</button>
+          <input type="file" id="fileInH0" hidden>
+          <input type="file" id="fileInH1" hidden>
+        </div>
+        <div class="assign-info" id="assignInfo" hidden></div>
       </div>
       <div class="tabs">
         <button class="tab on" data-tab="editor" type="button">Editor</button>
@@ -902,10 +939,16 @@
           <button class="btn" id="btnRestore" type="button" title="Volver al programa original (se puede deshacer)">Restaurar original</button>
         </div>
         <div class="banner" id="restoreBanner" hidden></div>
+        <div class="edpair" id="edpair">
         <div class="edwrap" id="edwrap">
           <div class="gutter"><div id="gutInner"></div></div>
           <div class="backdrop"><div id="backInner"></div></div>
           <textarea id="ed" spellcheck="false" wrap="off" autocomplete="off" autocapitalize="off" autocorrect="off" inputmode="text" aria-label="Programa NC"></textarea>
+        </div>
+        <div class="ed2wrap" id="ed2wrap" hidden>
+          <div class="ed2head" id="ed2head"></div>
+          <textarea id="ed2" readonly spellcheck="false" wrap="off" autocomplete="off" autocapitalize="off" autocorrect="off" aria-label="Programa de la otra cabeza (toque para editarlo)"></textarea>
+        </div>
         </div>
         <div class="edstatus" id="edStatus"></div>
       </div>
@@ -1031,9 +1074,13 @@
           <label>Cabeza 2 <input type="color" id="colH2" data-h="1" value="#f472b6" aria-label="Color Cabeza 2"></label>
         </div>
         <label class="pref-field">Códigos M de espera
-          <input type="text" id="waitSpec" value="100-199" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Códigos M de espera">
+          <input type="text" id="waitSpec" value="auto" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Códigos M de espera">
         </label>
-        <p class="pref-note">Rango o lista, p. ej. <b>100-199</b> o <b>107,108,109</b>. Cada espera de una cabeza se empareja, en orden, con el mismo código de la otra.</p>
+        <p class="pref-note"><b>auto</b> (por defecto): los M100–M199 que aparecen en <b>las dos</b> cabezas. También rango o lista fija, p. ej. <b>100-199</b> o <b>100,101,107</b>. Cada espera de una cabeza se empareja, en orden, con el mismo código de la otra. Códigos supuestos: confírmelos con la máquina.</p>
+        <label class="pref-field">Tiempo de subprogramas externos (s)
+          <input type="text" id="subTimes" value="" placeholder="p. ej. P1000=20, P2991=5" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Tiempo supuesto de subprogramas externos">
+        </label>
+        <p class="pref-note">Los M98 P#### que no están en el archivo (subprogramas de la máquina, p. ej. la pintura) cuentan 0 s. Ponga aquí su duración para que las esperas salgan reales.</p>
         <label class="chk"><input type="checkbox" id="dualSwap"> Cabeza 1 a la izquierda</label>
         <label class="chk"><input type="checkbox" id="dualZDown"> Z mayor hacia abajo</label>
       </div>
@@ -1255,6 +1302,7 @@ function simulate(text, opts) {
   const zrnX = opts.zrnX || 2000, zrnZ = opts.zrnZ || 2000;
   const tools = opts.tools || DEFAULT_TOOLS;
   const external = opts.externalSubs ? new Set(opts.externalSubs) : DEFAULT_EXTERNAL;
+  const subTimes = opts.subTimes || {};
   const programs = splitPrograms(text);
   const byO = {};
   programs.forEach(p => { if (p.o_number != null) byO[p.o_number] = p; });
@@ -1442,9 +1490,12 @@ function simulate(text, opts) {
         const label = "Subprograma externo P" + String(pInt).padStart(4, "0") +
           (ext ? " (máquina: lubricación/pintura/expulsión u otro)" : " — no está en el archivo");
         if (!ext) st.notes.push("L" + sl.line + ": M98 P" + pInt + " no está en el archivo ni en la lista de subs externos.");
+        const subDt = Math.max(0, Number(subTimes[pInt]) || 0);
+        const ev2 = events.concat([label]);
+        if (subDt > 0) { ev2.push("Tiempo supuesto " + subDt + " s (Ajustes)"); st.dwell_s += subDt; }
         emit({ line: sl.line, o_number: sl.o_number, n: extractN(raw, body),
                text: (raw || body).trim(), raw, block_delete: sl.block_delete,
-               kind: "subcall", dt: 0, events: events.concat([label]), comment });
+               kind: "subcall", dt: subDt, events: ev2, comment });
         return;
       }
       emit({ line: sl.line, o_number: sl.o_number, n: extractN(raw, body),
@@ -1570,6 +1621,7 @@ const L_T_CODE = /(?<![\w])T(\d+)\b/gi;
 const L_F_WORD = /(?:^|[^A-Za-z])F\s*([+\-]?\d+\.?\d*|\.\d+)/i;
 const L_S_WORD = /(?:^|[^A-Za-z])S\s*([+\-]?\d+\.?\d*|\.\d+)/i;
 const L_AXIS_O = /\b[A-Za-z][-+]?(?:\d+\.?\d*|\.\d+)O/gi;
+const L_DOUBLE_DOT = /\b[A-Za-z]\s*[-+]?\d*\.\d*\./g;
 const LINT_JS_CODES = ["LETTER_O_IN_NUMBER", "M98_P_MISSING_O", "DUPLICATE_N",
   "SPINDLE_OVER_MAX", "M34_WITHOUT_M35", "FEED_INHERITED_FROM_EXIT", "FEED_MISSING_AFTER_RAPID"];
 
@@ -1603,6 +1655,10 @@ function lintNC(text, opts) {
       const tok = m[0];
       if (/^O\d+$/i.test(tok)) continue;
       if (tok.slice(1).indexOf("O") >= 0) add("error", "LETTER_O_IN_NUMBER", "Letra O dentro de un número (¿quiso decir 0?): " + tok, s.line);
+    }
+    L_DOUBLE_DOT.lastIndex = 0;
+    while ((m = L_DOUBLE_DOT.exec(s.body))) {
+      add("error", "DOUBLE_DECIMAL_POINT", "Número con dos puntos decimales: " + m[0].replace(/\s+/g, "") + " (el control lo rechaza; ¿quiso decir " + m[0].replace(/\s+/g, "").replace(/\.$/, "") + "?)", s.line);
     }
   }
   // Programas (como _split_programs)
@@ -1855,7 +1911,7 @@ function diffStatus(a, b) {
 
 /* ---------------- Dos cabezas: división HEAD1/HEAD2 y sincronización por códigos M de espera ---------------- */
 // Espejo exacto de simulator.py (split_heads, parse_wait_spec, find_waits, sync_timeline).
-const DEFAULT_WAIT_SPEC = "100-199";
+const DEFAULT_WAIT_SPEC = "auto";  // auto = códigos M100–M199 presentes en las dos cabezas
 const HEAD_MARK_RE = /^\s*\(\s*(?:HEAD|CABEZA|PATH|CAB)\s*[-_ ]?\s*([12])\b[^)]*\)\s*$/i;
 
 function splitHeads(text) {
@@ -1876,9 +1932,12 @@ function joinHeads(head1, head2) {
   return "(HEAD1)\n" + clean(head1) + "\n(HEAD2)\n" + clean(head2) + "\n";
 }
 
+function isAutoWaitSpec(spec) { return spec == null || /^\s*auto\b/i.test(String(spec)); }
 function parseWaitSpec(spec) {
   const out = [];
-  String(spec == null ? DEFAULT_WAIT_SPEC : spec).split(/[\s,;]+/).forEach(tok => {
+  let src = String(spec == null ? DEFAULT_WAIT_SPEC : spec);
+  if (/^\s*auto\b/i.test(src)) { src = src.replace(/^\s*auto\b[\s:]*/i, ""); if (!src.trim()) src = "100-199"; }
+  src.split(/[\s,;]+/).forEach(tok => {
     tok = tok.trim().replace(/^M/i, "");
     if (!tok) return;
     const r = tok.match(/^(\d+)\s*-\s*M?(\d+)$/i);
@@ -1896,6 +1955,23 @@ function blockMCodes(b) {
   return intWords(parseWords(body), "M");
 }
 
+/* Códigos de espera efectivos: lista fija, o en modo auto los candidatos que aparecen en las dos cabezas. */
+function resolveWaitCodes(spec, simA, simB) {
+  const cand = parseWaitSpec(spec);
+  if (!isAutoWaitSpec(spec)) return cand;
+  const set = new Set(cand);
+  const present = s => {
+    const out = new Set();
+    ((s && s.blocks) || []).forEach(b => {
+      if (b.skipped || b.kind === "skip") return;
+      blockMCodes(b).forEach(m => { if (set.has(m)) out.add(m); });
+    });
+    return out;
+  };
+  const a = present(simA), b = present(simB);
+  return cand.filter(c => a.has(c) && b.has(c));
+}
+
 function findWaits(sim, waitCodes) {
   const set = new Set(waitCodes || parseWaitSpec(DEFAULT_WAIT_SPEC));
   const out = [];
@@ -1908,7 +1984,7 @@ function findWaits(sim, waitCodes) {
 
 function syncTimeline(simA, simB, opts) {
   opts = opts || {};
-  const codes = opts.waitCodes || parseWaitSpec(opts.waitSpec);
+  const codes = opts.waitCodes || resolveWaitCodes(opts.waitSpec, simA, simB);
   const sims = [simA, simB];
   const totals = sims.map(s => (s && s.cycle && s.cycle.total_s) || 0);
   const waits = sims.map(s => findWaits(s, codes));
@@ -2008,6 +2084,52 @@ function waitLintIssues(sync, h) {
 function isSprayBlock(b) { return !!(b && b.diecoat && b.points && b.points.length >= 2); }
 function simHasSpray(s) { return !!(s && s.blocks && s.blocks.some(isSprayBlock)); }
 
+/* Asignación automática de dos archivos a Cabeza 1 / Cabeza 2.
+   Cabeza 1 lleva el R5 (T0005/T0205), la pintura (M98 P1000, M9) y el quemador (M34). */
+function head1Evidence(text) {
+  const lines = splitLines(text);
+  const body = lines.map(l => stripComments(l)).join("\n");
+  const comments = lines.map(l => (l.match(/\([^)]*\)/g) || []).join(" ")).join("\n");
+  const ev = [];
+  const add = (re, src, label, w) => { if (re.test(src)) ev.push({ label: label, w: w }); };
+  add(/\bT\s*0*(?:5|205)(?!\d)/i, body, "T0005/R5", 3);
+  add(/\bR\s*5\b(?!\.\d)/i, comments, "R5 (comentario)", 1);
+  add(/\bM\s*98\s*P\s*0*1000(?!\d)/i, body, "M98 P1000 (pintura)", 2);
+  add(/\bM\s*0*9(?!\d)/i, body, "M9 (spray)", 1);
+  add(/\bM\s*34(?!\d)/i, body, "M34", 1);
+  return ev;
+}
+function head1Score(text) { return head1Evidence(text).reduce((a, e) => a + e.w, 0); }
+function headHintFromName(name) {
+  const n = String(name || "");
+  if (/(HEAD|CABEZA|CAB|PATH|C)\s*[-_ ]?2(?!\d)|_2(\.|$)/i.test(n)) return 2;
+  if (/(HEAD|CABEZA|CAB|PATH|C)\s*[-_ ]?1(?!\d)|_1(\.|$)/i.test(n)) return 1;
+  return 0;
+}
+/* a, b: { name, text } en el orden en que se eligieron. */
+function assignHeads(a, b) {
+  const sa = head1Score(a.text), sb = head1Score(b.text);
+  let swap = false, method = "orden";
+  if (sa !== sb) { swap = sb > sa; method = "contenido"; }
+  else {
+    const ha = headHintFromName(a.name), hb = headHintFromName(b.name);
+    if ((ha === 2 && hb !== 2) || (hb === 1 && ha !== 1)) { swap = true; method = "nombre"; }
+    else if (ha === 1 || hb === 2) method = "nombre";
+  }
+  const h1 = swap ? b : a, h2 = swap ? a : b;
+  return { head1: h1, head2: h2, swapped: swap, method: method,
+           evidence: head1Evidence(h1.text).map(e => e.label), evidence2: head1Evidence(h2.text).map(e => e.label) };
+}
+/* "P1000=20, 2991=5" → { 1000: 20, 2991: 5 } */
+function parseSubTimes(spec) {
+  const out = {};
+  String(spec || "").split(/[,;\n]+/).forEach(tok => {
+    const m = tok.match(/^\s*(?:M98\s*)?P?\s*(\d+)\s*[=:]\s*([0-9]+(?:\.[0-9]+)?)\s*s?\s*$/i);
+    if (m) out[parseInt(m[1], 10)] = parseFloat(m[2]);
+  });
+  return out;
+}
+
 /* ---------------- UI ---------------- */
 const $ = id => document.getElementById(id);
 const canvas = $("view");
@@ -2052,6 +2174,7 @@ const DEFAULT_HEAD_COLORS = ["#22d3ee", "#f472b6"];
 const DUAL_LAST_KEY = "variforma-2cab-last";
 let active = 0, heads = [null, null], dualSync = null, globalT = 0, lastDerivedT = null, curSign = 1;
 let headColors = DEFAULT_HEAD_COLORS.slice(), waitSpec = DEFAULT_WAIT_SPEC, dualSwap = false, dualZDown = false, dualLoading = false;
+let subTimes = {}, subTimesSpec = "", sideBySide = false, lastAssign = null;
 function zDirV() { return dualZDown ? -1 : 1; }
 function signOf(h) { return ((h === 0) !== !!dualSwap) ? 1 : -1; }
 
@@ -2158,7 +2281,8 @@ function simOpts(skip) {
     geometry: isPreloadedFile ? (PRELOADED && PRELOADED.geometry) : null,
     toolsPayload: PRELOADED && PRELOADED.tools, machine: PRELOADED && PRELOADED.machine,
     rapidX: M.x_rapid_mm_min || 5200, rapidZ: M.z_rapid_mm_min || 5200,
-    zrnX: M.x_zrn_mm_min || 2000, zrnZ: M.z_zrn_mm_min || 2000
+    zrnX: M.x_zrn_mm_min || 2000, zrnZ: M.z_zrn_mm_min || 2000,
+    subTimes: DUAL ? subTimes : undefined
   };
 }
 
@@ -2238,7 +2362,17 @@ function computeSimulation(text) {
       ? "Reglas esenciales del navegador"
       : "Programa editado: reglas esenciales del navegador (el lint completo y la colisión se recalculan con cli.py)";
   }
-  if (DUAL) all = all.concat(dualWaitFindings(s));
+  if (DUAL) {
+    all = all.map(f => {
+      if (f.code !== "M98_P_MISSING_O") return f;
+      const pm = String(f.message || "").match(/P(\d+)/);
+      const pn = pm ? parseInt(pm[1], 10) : null, tt = pn != null ? subTimes[pn] : null;
+      return Object.assign({}, f, { level: "info", code: "M98_P_EXTERNAL",
+        message: "M98 P" + (pn != null ? String(pn).padStart(4, "0") : "?") + ": subprograma externo de la máquina (no está en el archivo). Se muestra como llamada; cuenta " +
+          (tt ? tt + " s (Ajustes)" : "0 s — ponga su tiempo en ⚙ si afecta las esperas") + "." });
+    });
+    all = all.concat(dualWaitFindings(s));
+  }
   const byLine = {};
   all.forEach(f => { if (f.line != null) (byLine[f.line] || (byLine[f.line] = [])).push(f); });
   s.blocks.forEach(b => { b.lint = byLine[b.line] ? byLine[b.line].slice() : []; });
@@ -4100,14 +4234,14 @@ function dualSetGlobal(g) {
   currentT = dualSync ? syncLocalTime(dualSync, active, globalT) : globalT;
   lastDerivedT = currentT;
 }
-function waitCodesNow() { return parseWaitSpec(waitSpec); }
+function waitCodesNow() { return resolveWaitCodes(waitSpec, simOf(0) || EMPTY_SIM, simOf(1) || EMPTY_SIM); }
 function waitFindingsFrom(sync, h) {
   return waitLintIssues(sync, h).map(i => Object.assign({ source: "dos cabezas" }, i));
 }
 function dualWaitFindings(s) {
   const other = simOf(1 - active) || EMPTY_SIM;
   const pair = active === 0 ? [s, other] : [other, s];
-  return waitFindingsFrom(syncTimeline(pair[0], pair[1], { waitCodes: waitCodesNow() }), active);
+  return waitFindingsFrom(syncTimeline(pair[0], pair[1], { waitSpec: waitSpec }), active);
 }
 function dualRefreshInactive() {
   const o = 1 - active, st = heads[o];
@@ -4119,7 +4253,7 @@ function dualRefreshInactive() {
   st.sim.blocks.forEach(b => { b.lint = (b.lint || []).filter(f => !/^WAIT_/.test(f.code || "")).concat(byLine[b.line] || []); });
 }
 function dualResync() {
-  dualSync = syncTimeline(simOf(0) || EMPTY_SIM, simOf(1) || EMPTY_SIM, { waitCodes: waitCodesNow() });
+  dualSync = syncTimeline(simOf(0) || EMPTY_SIM, simOf(1) || EMPTY_SIM, { waitSpec: waitSpec });
   dualRefreshInactive();
   renderSyncInfo();
   updateHeadBar();
@@ -4183,6 +4317,7 @@ function switchHead(h, opts) {
   applyEditorScroll(st.scroll ? st.scroll.x : 0, st.scroll ? st.scroll.y : 0, false);
   updateHeadBar();
   updateStatus();
+  updateEd2();
   if (!opts.silent) { redraw(); if (!opts.quiet) toast("Editando " + HEAD_LABELS[h] + " (" + HEAD_IDS[h] + ")", 1400); }
   return true;
 }
@@ -4219,15 +4354,111 @@ function dualOpen(text, name, preloaded) {
     dualLoadPair(sp.head1, stem + "_HEAD1.NCD", sp.head2, stem + "_HEAD2.NCD", preloaded);
   } else dualLoadOne(active, text, name, preloaded);
   if (!preloaded) dualRemember();
+  lastAssign = null; renderAssignInfo();
+}
+function readAsText(f) {
+  if (f && typeof f.text === "function") return f.text();
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = rej; r.readAsText(f); });
+}
+function dualLoadAssigned(a, b) {
+  const r = assignHeads(a, b);
+  dualLoadPair(r.head1.text, r.head1.name, r.head2.text, r.head2.name, false);
+  dualRemember();
+  lastAssign = { name1: r.head1.name, name2: r.head2.name, method: r.method, evidence: r.evidence, swapped: r.swapped, manual: false };
+  renderAssignInfo();
+  toast("Cabeza 1 ← " + r.head1.name + (r.evidence.length ? " (" + r.evidence.join(", ") + ")" : "") + " · Cabeza 2 ← " + r.head2.name +
+    (r.method === "orden" ? " (por orden)" : "") + ". Si está al revés: ⇄ Intercambiar.", 5200);
+  return r;
 }
 function dualReadTwo(f1, f2) {
-  const isTwo = n => /(HEAD|CAB\w*|PATH)\s*[-_ ]?2|_2(\.|$)/i.test(n || "");
-  if (isTwo(f1.name) && !isTwo(f2.name)) { const t = f1; f1 = f2; f2 = t; }
-  Promise.all([f1.text(), f2.text()]).then(([a, b]) => {
-    dualLoadPair(a, f1.name, b, f2.name, false);
+  return Promise.all([readAsText(f1), readAsText(f2)]).then(([a, b]) => dualLoadAssigned({ name: f1.name, text: a }, { name: f2.name, text: b }))
+    .catch(() => toast("No se pudieron leer los dos archivos."));
+}
+function renderAssignInfo() {
+  const el = $("assignInfo"); if (!el) return;
+  if (!lastAssign) { el.hidden = true; el.textContent = ""; renderSyncInfo(); return; }
+  const why = lastAssign.manual ? "intercambiado a mano" : lastAssign.method === "contenido" ? (lastAssign.evidence.join(", ") || "contenido") :
+    lastAssign.method === "nombre" ? "por el nombre" : "por orden de selección";
+  el.hidden = false;
+  el.innerHTML = '<b style="color:' + headColor(0) + '">C1</b> ← ' + escapeHtml(lastAssign.name1) + ' · <b style="color:' + headColor(1) + '">C2</b> ← ' +
+    escapeHtml(lastAssign.name2) + " <span>(" + escapeHtml(why) + ")</span>";
+  el.title = el.textContent;
+  renderSyncInfo();
+}
+function dualReadInto(h, f) {
+  return readAsText(f).then(text => {
+    const sp = splitHeads(text);
+    if (sp.found) { dualOpen(text, f.name, false); toast("Abierto " + f.name + " (HEAD1 + HEAD2)"); return; }
+    dualLoadOne(h, text, f.name, false);
     dualRemember();
-    toast("Cabeza 1: " + f1.name + " · Cabeza 2: " + f2.name, 3200);
-  }).catch(() => toast("No se pudieron leer los dos archivos."));
+    if (lastAssign) { lastAssign = null; renderAssignInfo(); }
+    toast("Abierto " + f.name + " en " + HEAD_LABELS[h], 2400);
+  }).catch(() => toast("No se pudo leer " + (f && f.name)));
+}
+function swapHeads() {
+  if (!DUAL) return false;
+  flushHeadTimers();
+  const st = [0, 1].map(h => h === active ? captureHead() : heads[h]);
+  if (!st[0] || !st[1]) { toast("Cargue las dos cabezas para intercambiar."); return false; }
+  heads = [st[1], st[0]];
+  const cur = heads[active]; heads[active] = null;
+  restoreHead(cur);
+  curEdLine = -1;
+  updateUndoButtons();
+  dualRecomputeActive();
+  dualSetGlobal(0);
+  applyEditorScroll(cur.scroll ? cur.scroll.x : 0, cur.scroll ? cur.scroll.y : 0, false);
+  fitAll();
+  dualRemember();
+  if (lastAssign) { lastAssign = { name1: lastAssign.name2, name2: lastAssign.name1, method: lastAssign.method, evidence: [], swapped: !lastAssign.swapped, manual: true }; }
+  else lastAssign = { name1: headField(0, "originalName"), name2: headField(1, "originalName"), method: "manual", evidence: [], manual: true };
+  renderAssignInfo();
+  updateHeadBar(); updateStatus(); redraw();
+  toast("Intercambiadas: Cabeza 1 ← " + headField(0, "originalName") + " · Cabeza 2 ← " + headField(1, "originalName"), 3200);
+  return true;
+}
+/* ---- Vista de los dos editores lado a lado ---- */
+function sideBySideAllowed() { return !(isMobileLayout() && window.matchMedia && window.matchMedia("(orientation: portrait)").matches); }
+function setSideBySide(on, opts) {
+  sideBySide = !!on;
+  if (!(opts && opts.skipSave)) saveUi({ sideBySide: sideBySide });
+  updateEd2();
+  return sideBySide && sideBySideAllowed();
+}
+function updateEd2() {
+  const wrap = $("ed2wrap"), pair = $("edpair"), b = $("btnSideBySide");
+  if (!wrap || !pair) return;
+  const show = DUAL && sideBySide && sideBySideAllowed();
+  if (b) b.setAttribute("aria-pressed", sideBySide ? "true" : "false");
+  wrap.hidden = !show;
+  pair.classList.toggle("both", show);
+  const sd = $("side"), wide = show && !isMobileLayout();
+  if (sd && sd.classList.contains("sbs") !== wide) {
+    sd.classList.toggle("sbs", wide);
+    requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
+  }
+  if (!show) return;
+  const o = 1 - active;
+  pair.style.setProperty("--hc-act", headColor(active));
+  pair.style.setProperty("--hc-oth", headColor(o));
+  $("edwrap").style.order = String(active);
+  wrap.style.order = String(o);
+  const txt = headField(o, "text") || "";
+  const e2 = $("ed2");
+  if (e2.value !== txt) e2.value = txt;
+  const i = headLineInfo(o);
+  $("ed2head").innerHTML = "<b>" + HEAD_LABELS[o] + "</b> · " + escapeHtml(headField(o, "originalName") || "—") +
+    (i.line ? " · L" + i.line : "") + (i.waiting ? " · ⏸ M" + i.waiting.code : "") + " · toque para editar";
+}
+function ed2Activate(ev) {
+  if (!DUAL) return;
+  const e2 = $("ed2"), o = 1 - active;
+  const pos = e2.selectionStart || 0, top = e2.scrollTop, left = e2.scrollLeft;
+  switchHead(o, { quiet: true });
+  try { ed.focus({ preventScroll: true }); } catch (e) { ed.focus(); }
+  try { ed.setSelectionRange(pos, pos); } catch (e) {}
+  applyEditorScroll(left, top, false);
+  updateEd2();
 }
 function dualLoadDemo() {
   const demo = PRELOADED && PRELOADED.dualDemo;
@@ -4382,12 +4613,18 @@ function updateHeadStrip() {
     return '<button type="button" class="hchip' + (h === active ? " on" : "") + '" data-head="' + h + '" style="--hc:' + headColor(h) + '" title="' + escapeHtml(HEAD_LABELS[h] + " (" + HEAD_IDS[h] + ")") + '">' +
       "<b>" + HEAD_SHORT[h] + "</b>" + st + '<span class="ln">' + ln + "</span></button>";
   }).join("");
+  if (sideBySide && $("ed2wrap") && !$("ed2wrap").hidden) {
+    const o = 1 - active, i = headLineInfo(o);
+    $("ed2head").innerHTML = "<b>" + HEAD_LABELS[o] + "</b> · " + escapeHtml(headField(o, "originalName") || "—") +
+      (i.line ? " · L" + i.line : "") + (i.waiting ? " · ⏸ M" + i.waiting.code : "") + " · toque para editar";
+  }
 }
 function updateHeadBar() {
   if (!DUAL) return;
   [0, 1].forEach(h => {
     const btn = $("headBtn" + h); if (!btn) return;
     btn.style.setProperty("--hc", headColor(h));
+    btn.style.setProperty("--hcbg", hexAlpha(headColor(h), 0.24));
     btn.classList.toggle("on", h === active);
     btn.setAttribute("aria-selected", h === active ? "true" : "false");
     const name = headField(h, "originalName") || "—";
@@ -4397,6 +4634,12 @@ function updateHeadBar() {
     const sub = $("headSub" + h);
     if (sub) sub.innerHTML = (pend ? '<span class="pend">● </span>' : "") + (e ? '<span style="color:var(--err)">' + e + " err · </span>" : "") + escapeHtml(name);
   });
+  renderAssignInfo();
+  updateEd2();
+}
+function hexAlpha(hex, a) {
+  const v = normHex(hex) || "#3b9eff";
+  return "rgba(" + parseInt(v.slice(1, 3), 16) + "," + parseInt(v.slice(3, 5), 16) + "," + parseInt(v.slice(5, 7), 16) + "," + a + ")";
 }
 function dualReadoutHtml() {
   if (!DUAL) return "";
@@ -4412,7 +4655,20 @@ function renderSyncInfo() {
   if (!el || !dualSync) return;
   const codes = dualSync.codes;
   const spec = codes.length > 12 ? ("M" + codes[0] + "–M" + codes[codes.length - 1]) : codes.map(c => "M" + c).join(", ");
-  let h = '<div class="sp">Códigos de espera: <b>' + escapeHtml(spec || "ninguno") + "</b> (Ajustes ⚙ para cambiar)</div>";
+  const auto = isAutoWaitSpec(waitSpec);
+  let h = '<div class="sp">Códigos de espera' + (auto ? " (auto: M100–M199 que están en las dos cabezas)" : "") + ': <b>' + escapeHtml(spec || "ninguno") +
+    "</b> · supuestos, Ajustes ⚙ para cambiar</div>";
+  const ext = [0, 1].map(h2 => {
+    const s2 = simOf(h2); if (!s2) return [];
+    const ps = [];
+    s2.blocks.forEach(b => { if (b.kind !== "subcall" || b.skipped) return; const m = (b.events || []).join(" ").match(/Subprograma externo P(\d+)/); if (m && ps.indexOf(m[1]) < 0) ps.push(m[1]); });
+    return ps;
+  });
+  if (ext[0].length || ext[1].length) {
+    const fmtP = ps => ps.map(x => "P" + x + (subTimes[parseInt(x, 10)] ? "=" + subTimes[parseInt(x, 10)] + "s" : "")).join(", ") || "—";
+    h += '<div class="sp">Subprogramas externos (no están en los archivos): HEAD1 ' + escapeHtml(fmtP(ext[0])) + " · HEAD2 " + escapeHtml(fmtP(ext[1])) +
+      ". Sin tiempo en ⚙ cuentan 0 s.</div>";
+  }
   if (!dualSync.pairs.length && !dualSync.issues.length) h += '<div class="sp">Sin esperas: las dos cabezas corren a la vez desde el inicio.</div>';
   dualSync.pairs.forEach(p => {
     h += '<div class="sp">M' + p.code + " · espera " + (p.index + 1) + ": HEAD1 L" + p.lines[0] + " ↔ HEAD2 L" + p.lines[1] + " · " +
@@ -4423,6 +4679,10 @@ function renderSyncInfo() {
     h += '<div class="sp err">' + HEAD_IDS[it.head] + " L" + it.line + " M" + it.code + ": " +
       (it.kind === "order" ? "no coincide con M" + (it.other_code != null ? it.other_code : "—") + " de la otra cabeza" : "sin pareja en la otra cabeza") + "</div>";
   });
+  if (lastAssign) {
+    h += '<div class="sp">Archivos: Cabeza 1 ← ' + escapeHtml(lastAssign.name1) + " · Cabeza 2 ← " + escapeHtml(lastAssign.name2) + " (" +
+      escapeHtml(lastAssign.manual ? "intercambiado a mano" : lastAssign.method === "contenido" ? lastAssign.evidence.join(", ") : lastAssign.method === "nombre" ? "por el nombre" : "por orden") + ")</div>";
+  }
   h += '<div class="sp">Ciclo: HEAD1 ' + fmtTime(dualSync.ends[0]) + " · HEAD2 " + fmtTime(dualSync.ends[1]) + " · total " + fmtTime(dualSync.total) + "</div>";
   el.innerHTML = h;
 }
@@ -4431,6 +4691,11 @@ function loadDualPrefs() {
   const hc = ui.headColors || {};
   headColors = [normHex(hc[0] || hc["0"]) || DEFAULT_HEAD_COLORS[0], normHex(hc[1] || hc["1"]) || DEFAULT_HEAD_COLORS[1]];
   waitSpec = (typeof ui.waitSpec === "string" && ui.waitSpec.trim()) ? ui.waitSpec : DEFAULT_WAIT_SPEC;
+  if (ui.waitSpecV !== 2 && waitSpec.trim() === "100-199") waitSpec = DEFAULT_WAIT_SPEC;  // el antiguo valor por defecto pasa a auto
+  subTimesSpec = typeof ui.subTimes === "string" ? ui.subTimes : "";
+  subTimes = parseSubTimes(subTimesSpec);
+  sideBySide = !!ui.sideBySide;
+  if ($("subTimes")) $("subTimes").value = subTimesSpec;
   dualSwap = !!ui.dualSwap; dualZDown = !!ui.dualZDown;
   if ($("colH1")) $("colH1").value = headColors[0];
   if ($("colH2")) $("colH2").value = headColors[1];
@@ -4448,11 +4713,28 @@ function setHeadColor(h, hex) {
 }
 function setWaitSpec(spec) {
   waitSpec = String(spec == null ? DEFAULT_WAIT_SPEC : spec).trim() || DEFAULT_WAIT_SPEC;
-  saveUi({ waitSpec: waitSpec });
+  saveUi({ waitSpec: waitSpec, waitSpecV: 2 });
   if ($("waitSpec") && $("waitSpec").value !== waitSpec) $("waitSpec").value = waitSpec;
   dualRecomputeActive();
   redraw();
   return waitCodesNow();
+}
+function dualRecomputeBoth() {
+  const a = active;
+  dualRecomputeActive();
+  if (simOf(1 - a)) { switchHead(1 - a, { silent: true }); switchHead(a, { silent: true }); }
+  dualResync();
+}
+function setSubTimes(spec) {
+  subTimesSpec = String(spec == null ? "" : spec).trim();
+  subTimes = parseSubTimes(subTimesSpec);
+  saveUi({ subTimes: subTimesSpec });
+  if ($("subTimes") && $("subTimes").value !== subTimesSpec) $("subTimes").value = subTimesSpec;
+  const g = globalT;
+  dualRecomputeBoth();
+  dualSetGlobal(g);
+  redraw();
+  return Object.assign({}, subTimes);
 }
 function setDualView(opts) {
   if ("swap" in opts) dualSwap = !!opts.swap;
@@ -4482,8 +4764,11 @@ function setupModeUi() {
     ["headBar", "headStrip", "prefDual", "dataSyncWrap", "saveBoth"].forEach(id => { if ($(id)) $(id).hidden = false; });
     const dr = $("dataReadout"), sw = $("dataSyncWrap");
     if (dr && sw && dr.parentNode) dr.parentNode.insertBefore(sw, dr.nextSibling);
-    if ($("fileIn")) $("fileIn").multiple = true;
-    if ($("btnOpen")) $("btnOpen").title = "Un archivo va a la cabeza activa; dos archivos (o uno con (HEAD1)/(HEAD2)) cargan las dos";
+    if ($("fileIn")) { $("fileIn").multiple = true; $("fileIn").removeAttribute("accept"); }
+    if ($("btnOpen")) {
+      $("btnOpen").textContent = "Abrir 1 o 2";
+      $("btnOpen").title = "Elija los dos programas a la vez (HEAD1 y HEAD2) o uno con (HEAD1)/(HEAD2). Un solo archivo va a la cabeza activa.";
+    }
     if ($("zFlange")) $("zFlange").title = "Zoom a la pestaña (T0205) de la cabeza activa";
   } else if (window.__PWA_BUILD__) {
     if (lnk) lnk.hidden = false;
@@ -4517,7 +4802,24 @@ if (DUAL) {
   if ($("dualSwap")) $("dualSwap").addEventListener("change", () => setDualView({ swap: $("dualSwap").checked }));
   if ($("dualZDown")) $("dualZDown").addEventListener("change", () => setDualView({ zDown: $("dualZDown").checked }));
   if ($("saveBoth")) $("saveBoth").addEventListener("click", () => { saveBothHeads(); closeSaveSheet(); });
-  if ($("btnDualDemo")) $("btnDualDemo").addEventListener("click", () => { if (dualLoadDemo()) toast("Ejemplo de dos cabezas cargado (no apto para máquina)."); });
+  if ($("btnDualDemo")) $("btnDualDemo").addEventListener("click", () => { if (dualLoadDemo()) { lastAssign = null; renderAssignInfo(); toast("Ejemplo de dos cabezas cargado (no apto para máquina)."); } });
+  [0, 1].forEach(h => {
+    const inp = $("fileInH" + h); if (!inp) return;
+    inp.addEventListener("change", ev => {
+      const fs = ev.target.files ? Array.from(ev.target.files) : [];
+      if (fs.length >= 2) dualReadTwo(fs[0], fs[1]); else if (fs[0]) dualReadInto(h, fs[0]);
+      ev.target.value = "";
+    });
+  });
+  if ($("btnSwapHeads")) $("btnSwapHeads").addEventListener("click", () => swapHeads());
+  if ($("btnSideBySide")) $("btnSideBySide").addEventListener("click", () => {
+    const on = setSideBySide(!sideBySide);
+    if (sideBySide && !on) toast("Gire el teléfono (apaisado) para ver los dos programas lado a lado.", 2600);
+  });
+  if ($("ed2")) $("ed2").addEventListener("click", ed2Activate);
+  if ($("ed2head")) $("ed2head").addEventListener("click", () => { switchHead(1 - active); });
+  if ($("subTimes")) $("subTimes").addEventListener("change", () => setSubTimes($("subTimes").value));
+  window.addEventListener("resize", () => updateEd2());
 } else setupModeUi();
 
 /* ---------- Arranque ---------- */
@@ -4596,6 +4898,15 @@ window.__vf = {
     active: function () { return active; },
     switchHead: switchHead,
     sync: function () { return dualSync; },
+    swapHeads: swapHeads,
+    assignHeads: assignHeads,
+    loadAssigned: dualLoadAssigned,
+    lastAssign: function () { return lastAssign; },
+    setSideBySide: setSideBySide,
+    sideBySide: function () { return sideBySide && !!$("ed2wrap") && !$("ed2wrap").hidden; },
+    setSubTimes: setSubTimes,
+    subTimes: function () { return Object.assign({}, subTimes); },
+    waitCodes: waitCodesNow,
     globalT: function () { return globalT; },
     total: function () { return dualTotal(); },
     setGlobal: function (g) { dualSetGlobal(g); redraw(); return { globalT: globalT, local: currentT }; },
@@ -4649,6 +4960,7 @@ window.__vf = {
   acceptEdits: acceptEdits,
   cancelEdits: cancelEdits,
   hasPending: hasPending,
+  undoState: function () { return { idx: hist.idx, n: hist.stack.length }; },
   acceptedText: function () { return accepted; },
   previewSim: function () { return previewSim; },
   previewChangedBlocks: previewChangedBlocks,
