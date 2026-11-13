@@ -268,6 +268,14 @@
   #backInner .l.cur, #backInner .l.picked { background: rgba(255,45,120,.32); box-shadow: inset 3px 0 0 #ff2d78; }
   .im { margin-left: 3ch; font-style: italic; font-size: 11px; }
   .im.e { color: #ff8f8f; } .im.w { color: #ffd166; }
+  .im.h { color: #7dd3fc; opacity: .85; } .im.h.d { color: #c4b5fd; }
+  .code-now { display: none; }
+  html.layout-mobile .code-now { display: block; position: absolute; top: calc(var(--ui-tap) + 6px); left: 50%; transform: translateX(-50%);
+    z-index: 4; max-width: 92%; padding: 3px 10px; border-radius: 99px; border: 1px solid #c4b5fd; color: #c4b5fd;
+    background: rgba(16,20,28,.92); font-weight: 650; font-size: var(--ui-font-m); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+  html.layout-mobile .code-now[hidden] { display: none; }
+  .hchip .cl { color: #c4b5fd; font-weight: 600; white-space: nowrap; }
+  .readout .codenow { color: #c4b5fd; font-weight: 600; font-size: 12px; }
   #ed { position: absolute; left: 52px; top: 0; width: calc(100% - 52px); height: 100%; margin: 0; padding: 4px 8px; border: 0; outline: 0;
     resize: none; background: transparent; color: var(--text); font: inherit; line-height: var(--lh); white-space: pre; overflow: auto;
     tab-size: 8; caret-color: #fff; z-index: 2; }
@@ -870,6 +878,7 @@
           <span><i>S</i><b id="rsS">—</b></span>
           <span><i>T</i><b id="rsT">—</b></span>
         </div>
+        <div class="code-now" id="rsEv" hidden></div>
         <div class="readout-box" id="readoutBox">
           <div class="ro-head" id="roHead">Lectura ▾</div>
           <div class="readout" id="readout"></div>
@@ -1080,8 +1089,8 @@
         <label class="pref-field">Tiempo de subprogramas externos (s)
           <input type="text" id="subTimes" value="" placeholder="p. ej. P1000=20, P2991=5" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Tiempo supuesto de subprogramas externos">
         </label>
-        <p class="pref-note">Los M98 P#### que no están en el archivo (subprogramas de la máquina, p. ej. la pintura) cuentan 0 s. Ponga aquí su duración para que las esperas salgan reales.</p>
-        <label class="chk"><input type="checkbox" id="dualSwap"> Cabeza 1 a la izquierda</label>
+        <p class="pref-note">Los M98 P#### que no están en el archivo (subprogramas de la máquina) cuentan 0 s. Ponga aquí su duración para que las esperas salgan reales. <b>P1000 (pintura)</b> = lo que tarda la pistola en llegar de la base del rin al tope; cronométrelo y escriba p. ej. <code>P1000=18</code>. Las pausas G04 (G04 X1. = 1 s) ya se cuentan solas.</p>
+        <label class="chk"><input type="checkbox" id="dualSwap"> Cabeza 1 a la derecha (invertir lados)</label>
         <label class="chk"><input type="checkbox" id="dualZDown"> Z mayor hacia abajo</label>
       </div>
       <div class="pref-sec"><a class="btn" id="lnkModePrefs" href="dos_cabezas.html" hidden>Simulador de 2 cabezas →</a></div>
@@ -1399,19 +1408,22 @@ function simulate(text, opts) {
     for (const m of ms) {
       if (m === 3) { st.spindle = true; events.push("Husillo ON (M03)"); }
       else if (m === 5) { st.spindle = false; events.push("Husillo OFF (M05)"); }
-      else if (m === 9) { st.diecoat = true; events.push("Diecoat ON (M9)"); }
-      else if (m === 10) { st.diecoat = false; events.push("Diecoat OFF (M10)"); }
+      else if (m === 9) { st.diecoat = true; events.push("Spray/diecoat ON (M9)"); }
+      else if (m === 10) { st.diecoat = false; events.push("Spray OFF (M10)"); }
       else if (m === 34) { st.burner = true; st.seen_m34 = true; events.push("Quemador ON (M34)"); }
       else if (m === 35) { st.burner = false; st.seen_m35 = true; events.push("Quemador OFF (M35)"); }
-      else if (m === 36) events.push("Contador (M36)");
-      else if (m === 2) events.push("Giro de mandril (M02) — no es fin Fanuc");
+      else if (m === 36) events.push("Contador de rines (M36)");
+      else if (m === 2) events.push("Gira mandril (M02) — no es fin de programa");
+      else if (m === 17) events.push("Cierra tailstock (M17)");
+      else if (m === 18) events.push("Abre tailstock (M18)");
       else if (m === 30) events.push("M30 fin Fanuc");
       else if (m === 99) events.push("Retorno de subprograma (M99)");
       else if (m === 98) {}
-      else if (m === 18 || m === 23 || m === 24) {
-        events.push("M" + m + " (variante 2022, función no confirmada)");
-        st.notes.push("L" + sl.line + ": M" + m + " de la variante o2600_2022 (función no confirmada).");
-      } else events.push("M" + m);
+      else if (m === 23 || m === 24 || m === 73) {
+        events.push("Mandril gira / ir a lugar seguro? (M" + m + ")");
+        st.notes.push("L" + sl.line + ": M" + m + " función no confirmada (¿mandril gira / ir a lugar seguro?).");
+      } else if (m >= 100 && m <= 199) events.push("Espera entre cabezas (M" + m + ")");
+      else events.push("M" + m);
     }
 
     if (gs.indexOf(4) >= 0) {
@@ -1422,7 +1434,7 @@ function simulate(text, opts) {
       st.dwell_s += dwell;
       emit({ line: sl.line, o_number: sl.o_number, n: extractN(raw, body),
              text: (raw || body).trim(), raw, block_delete: sl.block_delete,
-             kind: "dwell", g: 4, dt: dwell, events: events.concat(["Espera " + dwell + " s"]),
+             kind: "dwell", g: 4, dt: dwell, events: events.concat(["G04 pausa " + dwell + " s"]),
              comment, start_x: st.x, start_z: st.z, end_x: st.x, end_z: st.z });
       return;
     }
@@ -2084,9 +2096,47 @@ function waitLintIssues(sync, h) {
 function isSprayBlock(b) { return !!(b && b.diecoat && b.points && b.points.length >= 2); }
 function simHasSpray(s) { return !!(s && s.blocks && s.blocks.some(isSprayBlock)); }
 
+/* Etiquetas legibles de códigos M (confirmadas por Julio 2026-11-13; «?» = sin confirmar). */
+const M_LABELS = {
+  2: "gira mandril (no es fin)", 3: "husillo ON", 5: "husillo OFF", 9: "spray/diecoat ON", 10: "spray OFF",
+  17: "cierra tailstock", 18: "abre tailstock", 30: "fin de programa", 34: "quemador ON", 35: "quemador OFF",
+  36: "contador de rines", 98: "llamar subprograma", 99: "retorno de subprograma",
+  23: "mandril gira / ir a lugar seguro (?)", 24: "mandril gira / ir a lugar seguro (?)", 73: "mandril gira / ir a lugar seguro (?)"
+};
+function mCodeLabel(m) {
+  m = Number(m);
+  if (Object.prototype.hasOwnProperty.call(M_LABELS, m)) return M_LABELS[m];
+  if (m >= 100 && m <= 199) return "espera entre cabezas";
+  return "";
+}
+function g04Seconds(body) {
+  const w = (L) => { const r = body.match(new RegExp("\\b" + L + "\\s*([-+]?\\d*\\.?\\d+)", "i")); return r ? parseFloat(r[1]) : null; };
+  const x = w("X"), pp = w("P"), u = w("U");
+  return x != null ? x : pp != null ? pp / 1000 : u != null ? u : 0;
+}
+/* Pistas de una línea del editor: [{kind:"m"|"dwell", code, text}] */
+function lineCodeHints(line) {
+  const body = stripComments(String(line || "")).replace(/^\s*\//, "").replace(/^\s*N\d+/i, "");
+  const out = [];
+  if (/\bG\s*0*4(?![\d.])/i.test(body)) {
+    const d = g04Seconds(body.replace(/^[\s\S]*?\bG\s*0*4(?![\d.])/i, ""));
+    out.push({ kind: "dwell", code: "G04", s: d, text: "pausa " + (+d.toFixed(3)) + " s" });
+  }
+  const re = /\bM\s*(\d+)/gi; let m;
+  while ((m = re.exec(body))) {
+    const c = parseInt(m[1], 10), lb = mCodeLabel(c);
+    if (!lb) continue;
+    let tx = "M" + m[1];
+    if (c === 98) { const pm = body.match(/\bP\s*(\d+)/i); if (pm) tx += " P" + pm[1]; }
+    out.push({ kind: "m", code: "M" + m[1], text: tx + " " + lb });
+  }
+  return out;
+}
+
 /* Asignación automática de dos archivos a Cabeza 1 / Cabeza 2.
-   Cabeza 1 lleva el R5 (T0005/T0205), la pintura (M98 P1000, M9) y el quemador (M34). */
-function head1Evidence(text) {
+   Corrección de Julio (2026-11-13): la cabeza con el R5 (T0005/T0205), la pintura (M98 P1000, M9)
+   y el quemador (M34) es la CABEZA 2 (lado derecho); Cabeza 1 (izquierda) hace 3 pasadas R12. */
+function paintHeadEvidence(text) {
   const lines = splitLines(text);
   const body = lines.map(l => stripComments(l)).join("\n");
   const comments = lines.map(l => (l.match(/\([^)]*\)/g) || []).join(" ")).join("\n");
@@ -2099,7 +2149,7 @@ function head1Evidence(text) {
   add(/\bM\s*34(?!\d)/i, body, "M34", 1);
   return ev;
 }
-function head1Score(text) { return head1Evidence(text).reduce((a, e) => a + e.w, 0); }
+function paintHeadScore(text) { return paintHeadEvidence(text).reduce((a, e) => a + e.w, 0); }
 function headHintFromName(name) {
   const n = String(name || "");
   if (/(HEAD|CABEZA|CAB|PATH|C)\s*[-_ ]?2(?!\d)|_2(\.|$)/i.test(n)) return 2;
@@ -2108,9 +2158,9 @@ function headHintFromName(name) {
 }
 /* a, b: { name, text } en el orden en que se eligieron. */
 function assignHeads(a, b) {
-  const sa = head1Score(a.text), sb = head1Score(b.text);
+  const sa = paintHeadScore(a.text), sb = paintHeadScore(b.text);
   let swap = false, method = "orden";
-  if (sa !== sb) { swap = sb > sa; method = "contenido"; }
+  if (sa !== sb) { swap = sa > sb; method = "contenido"; }   // la de pintura/R5 va a Cabeza 2
   else {
     const ha = headHintFromName(a.name), hb = headHintFromName(b.name);
     if ((ha === 2 && hb !== 2) || (hb === 1 && ha !== 1)) { swap = true; method = "nombre"; }
@@ -2118,7 +2168,7 @@ function assignHeads(a, b) {
   }
   const h1 = swap ? b : a, h2 = swap ? a : b;
   return { head1: h1, head2: h2, swapped: swap, method: method,
-           evidence: head1Evidence(h1.text).map(e => e.label), evidence2: head1Evidence(h2.text).map(e => e.label) };
+           evidence: paintHeadEvidence(h2.text).map(e => e.label), evidence1: paintHeadEvidence(h1.text).map(e => e.label) };
 }
 /* "P1000=20, 2991=5" → { 1000: 20, 2991: 5 } */
 function parseSubTimes(spec) {
@@ -2176,7 +2226,7 @@ let active = 0, heads = [null, null], dualSync = null, globalT = 0, lastDerivedT
 let headColors = DEFAULT_HEAD_COLORS.slice(), waitSpec = DEFAULT_WAIT_SPEC, dualSwap = false, dualZDown = false, dualLoading = false;
 let subTimes = {}, subTimesSpec = "", sideBySide = false, lastAssign = null;
 function zDirV() { return dualZDown ? -1 : 1; }
-function signOf(h) { return ((h === 0) !== !!dualSwap) ? 1 : -1; }
+function signOf(h) { return ((h === 1) !== !!dualSwap) ? 1 : -1; }   // Cabeza 2 a la derecha, Cabeza 1 a la izquierda
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c]));
@@ -2595,7 +2645,12 @@ function renderDecor() {
     const extra = fl.filter(f => f.level !== "info").length - 1;
     const msg = first ? '<span class="im ' + (err ? "e" : "w") + '">◀ ' + escapeHtml(first.code) + ": " +
       escapeHtml(first.message.length > 95 ? first.message.slice(0, 92) + "…" : first.message) + (extra > 0 ? " (+" + extra + ")" : "") + "</span>" : "";
-    bh += '<div class="l ' + cls + '"><span class="t">' + (escapeHtml(lines[i]) || " ") + "</span>" + msg + "</div>";
+    let hint = "";
+    if (!msg) {
+      const hs = lineCodeHints(lines[i]);
+      if (hs.length) hint = '<span class="im h' + (hs.some(x => x.kind === "dwell") ? " d" : "") + '">◀ ' + escapeHtml(hs.map(x => x.text).join(" · ")) + "</span>";
+    }
+    bh += '<div class="l ' + cls + '"><span class="t">' + (escapeHtml(lines[i]) || " ") + "</span>" + (msg || hint) + "</div>";
     gh += '<div class="g ' + cls + '">' + (i + 1) + "</div>";
   }
   $("backInner").innerHTML = bh;
@@ -2999,9 +3054,28 @@ function pointAtFraction(pts, u) {
   }
   return pts[pts.length - 1];
 }
+/* Qué código se está ejecutando: pausa G04 (con cuenta regresiva) o un M reciente con etiqueta. */
+function codeNowInfo(s, t) {
+  if (!s || !s.blocks || !s.blocks.length) return null;
+  const idx = blockIndexAt(t, s); if (idx < 0) return null;
+  const b = s.blocks[idx];
+  if (b && b.kind === "dwell" && b.dt > 0 && t >= b.t0 - 1e-9 && t <= b.t1 + 1e-9) {
+    const left = Math.max(0, b.t1 - t);
+    return { kind: "dwell", line: b.line, dt: b.dt, left: left, text: "G04 pausa " + (+b.dt.toFixed(3)) + " s · faltan " + left.toFixed(1) + " s" };
+  }
+  for (let i = idx; i >= 0; i--) {
+    const c = s.blocks[i];
+    if (t - c.t1 > 2.5) break;
+    if (c.kind === "skip") continue;
+    const hs = lineCodeHints(c.raw || c.text || "").filter(x => x.kind === "m");
+    if (hs.length) return { kind: "m", line: c.line, text: hs.map(x => x.text).join(" · ") };
+  }
+  return null;
+}
 function pill(label, on, extra) { return '<span class="pill ' + (extra || "") + " " + (on ? "on" : "") + '">' + label + " " + (on ? "ON" : "OFF") + "</span>"; }
 function updateReadout() {
   const st = stateAt(currentT), b = st.block || {};
+  const cn = codeNowInfo(sim, currentT);
   const total = (sim && sim.cycle && sim.cycle.total_s) || 0, cyc = (sim && sim.cycle) || {};
   const g50 = (st.g50_x != null || st.g50_z != null) ? ("X" + fmt(st.g50_x, 2) + " Z" + fmt(st.g50_z, 2)) : "—";
   const lint = (b.lint || []).filter(i => i.level !== "info").map(i => "[" + i.level + "] " + i.code).join(" · ");
@@ -3020,6 +3094,7 @@ function updateReadout() {
     fmtTime((cyc.rapid_s || 0) + (cyc.zrn_s || 0)) + " · esperas " + fmtTime(cyc.dwell_s) +
     ((sim && sim.machine && sim.machine.limits_are_placeholder) ? " (rápido PLACEHOLDER)" : " (G00 5200, ZRN 2000)") + "</div></div>" +
     (lint ? '<div class="span2" style="color:var(--warn);font-size:11px">' + escapeHtml(lint) + "</div>" : "") +
+    (cn ? '<div class="span2 codenow">' + (cn.kind === "dwell" ? "⏸ " : "▶ ") + escapeHtml(cn.text) + "</div>" : "") +
     ((b.events && b.events.length) ? '<div class="span2" style="color:var(--muted);font-size:11px">' + escapeHtml(b.events.join(" · ")) + "</div>" : "") +
     (selLine ? ('<div class="span2" style="font-size:11px">' + (selNoMove ? '<span class="pill on">sin movimiento</span> ' : "") +
       escapeHtml(formatSelLineText()) +
@@ -3036,6 +3111,8 @@ function updateReadout() {
   set("rsS", st.s != null ? fmt(st.s, 0) : "—");
   set("rsT", st.tool || "—");
   if ($("rsT")) $("rsT").style.color = colorForTool(st.tool);
+  const rse = $("rsEv");
+  if (rse) { const show = !DUAL && cn; rse.hidden = !show; rse.textContent = show ? (cn.kind === "dwell" ? "⏸ " : "") + cn.text : ""; }
 }
 
 /* ---------- Vista (escala igual en Z y X) ---------- */
@@ -3292,7 +3369,7 @@ function draw() {
       ctx.lineWidth = 1.5; ctx.strokeStyle = "#0e1116"; ctx.stroke();
     });
     const st = stateAt(currentT);
-    if (st.x != null && st.z != null) { drawRoller(st.z, st.x, st.tool); if (DUAL) drawHeadTag(active, st); }
+    if (st.x != null && st.z != null) { drawRoller(st.z, st.x, st.tool); if (DUAL) drawHeadTag(active, st); else drawCodeTag(st); }
   } else if (DUAL) drawOtherHead();
   if (drag && drag.mode === "box" && drag.moved) {
     ctx.save(); ctx.strokeStyle = "#3b9eff"; ctx.setLineDash([5, 4]); ctx.fillStyle = "rgba(59,158,255,.10)";
@@ -4366,7 +4443,7 @@ function dualLoadAssigned(a, b) {
   dualRemember();
   lastAssign = { name1: r.head1.name, name2: r.head2.name, method: r.method, evidence: r.evidence, swapped: r.swapped, manual: false };
   renderAssignInfo();
-  toast("Cabeza 1 ← " + r.head1.name + (r.evidence.length ? " (" + r.evidence.join(", ") + ")" : "") + " · Cabeza 2 ← " + r.head2.name +
+  toast("Cabeza 1 ← " + r.head1.name + " · Cabeza 2 ← " + r.head2.name + (r.evidence.length ? " (" + r.evidence.join(", ") + ")" : "") +
     (r.method === "orden" ? " (por orden)" : "") + ". Si está al revés: ⇄ Intercambiar.", 5200);
   return r;
 }
@@ -4553,6 +4630,24 @@ function drawOtherHead() {
   if (st.x != null && st.z != null) { drawRoller(st.z, st.x, st.tool); drawHeadTag(o, st); }
   curSign = sv;
 }
+function drawCodeTag(st) {
+  const cn = codeNowInfo(sim, currentT);
+  if (!cn || st.x == null || st.z == null) return;
+  const p = w2s(st.z, st.x / 2), c0 = w2sRaw(st.z, 0);
+  const label = (cn.kind === "dwell" ? "⏸ " : "") + cn.text;
+  ctx.save();
+  ctx.font = "700 12px system-ui, sans-serif";
+  const tw = ctx.measureText(label).width + 10, th = 18;
+  const outward = (p[0] - c0[0]) >= 0 ? 1 : -1;
+  let x = p[0] + outward * 16, y = p[1] - th - 6;
+  if (outward < 0) x -= tw;
+  x = Math.max(PAD_L + 2, Math.min(cw() - tw - 2, x)); y = Math.max(2, y);
+  ctx.fillStyle = "rgba(14,17,22,.88)"; ctx.strokeStyle = "#c4b5fd"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.rect(x, y, tw, th); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = "#c4b5fd"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  ctx.fillText(label, x + 5, y + th / 2 + 0.5);
+  ctx.restore();
+}
 function drawHeadTag(h, st) {
   if (!st || st.x == null || st.z == null) return;
   const sv = curSign; curSign = signOf(h);
@@ -4560,7 +4655,8 @@ function drawHeadTag(h, st) {
   curSign = sv;
   const wt = dualSync ? syncWaitingAt(dualSync, h, globalT) : null;
   const fin = dualSync && globalT >= dualSync.ends[h] - 1e-6;
-  const label = HEAD_SHORT[h] + (wt ? "  ⏸ M" + wt.code : fin ? "  ✓" : st.diecoat ? "  SPRAY" : "");
+  const cn = (!wt && !fin) ? codeNowInfo(simOf(h), headLocalT(h)) : null;
+  const label = HEAD_SHORT[h] + (wt ? "  ⏸ M" + wt.code + " espera" : fin ? "  ✓" : cn ? "  " + (cn.kind === "dwell" ? "⏸ " : "") + cn.text : st.diecoat ? "  SPRAY" : "");
   ctx.save();
   ctx.font = "700 12px system-ui, sans-serif";
   const tw = ctx.measureText(label).width + 10, th = 18;
@@ -4570,7 +4666,7 @@ function drawHeadTag(h, st) {
   x = Math.max(PAD_L + 2, Math.min(cw() - tw - 2, x)); y = Math.max(2, y);
   ctx.fillStyle = "rgba(14,17,22,.88)"; ctx.strokeStyle = headColor(h); ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.rect(x, y, tw, th); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = wt ? "#f5b942" : (!fin && st.diecoat) ? sprayColor : headColor(h); ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  ctx.fillStyle = wt ? "#f5b942" : cn ? "#c4b5fd" : (!fin && st.diecoat) ? sprayColor : headColor(h); ctx.textAlign = "left"; ctx.textBaseline = "middle";
   ctx.fillText(label, x + 5, y + th / 2 + 0.5);
   ctx.restore();
 }
@@ -4607,8 +4703,10 @@ function updateHeadStrip() {
   el.innerHTML = [0, 1].map(h => {
     const i = headLineInfo(h);
     const left = i.waiting ? (i.waiting.until - globalT) : 0;
+    const cn = (!i.waiting && !i.fin) ? codeNowInfo(simOf(h), i.t) : null;
     const st = i.waiting ? '<span class="wt">⏸ M' + i.waiting.code + " " + left.toFixed(1) + " s</span>"
-      : i.fin ? '<span class="fin">✓ fin</span>' : i.diecoat ? '<span class="spr" style="color:' + sprayColor + '">SPRAY</span>' : "";
+      : i.fin ? '<span class="fin">✓ fin</span>' : cn ? '<span class="cl">' + escapeHtml(cn.kind === "dwell" ? "⏸ G04 " + cn.left.toFixed(1) + " s" : cn.text) + "</span>"
+      : i.diecoat ? '<span class="spr" style="color:' + sprayColor + '">SPRAY</span>' : "";
     const ln = i.line ? ("L" + i.line + " " + escapeHtml(i.text)) : "—";
     return '<button type="button" class="hchip' + (h === active ? " on" : "") + '" data-head="' + h + '" style="--hc:' + headColor(h) + '" title="' + escapeHtml(HEAD_LABELS[h] + " (" + HEAD_IDS[h] + ")") + '">' +
       "<b>" + HEAD_SHORT[h] + "</b>" + st + '<span class="ln">' + ln + "</span></button>";
@@ -4696,7 +4794,7 @@ function loadDualPrefs() {
   subTimes = parseSubTimes(subTimesSpec);
   sideBySide = !!ui.sideBySide;
   if ($("subTimes")) $("subTimes").value = subTimesSpec;
-  dualSwap = !!ui.dualSwap; dualZDown = !!ui.dualZDown;
+  dualSwap = !!ui.dualSwapV2; dualZDown = !!ui.dualZDown;
   if ($("colH1")) $("colH1").value = headColors[0];
   if ($("colH2")) $("colH2").value = headColors[1];
   if ($("waitSpec")) $("waitSpec").value = waitSpec;
@@ -4739,7 +4837,7 @@ function setSubTimes(spec) {
 function setDualView(opts) {
   if ("swap" in opts) dualSwap = !!opts.swap;
   if ("zDown" in opts) dualZDown = !!opts.zDown;
-  saveUi({ dualSwap: dualSwap, dualZDown: dualZDown });
+  saveUi({ dualSwapV2: dualSwap, dualZDown: dualZDown });
   curSign = signOf(active);
   fitAll(); redraw();
 }
@@ -4961,6 +5059,8 @@ window.__vf = {
   cancelEdits: cancelEdits,
   hasPending: hasPending,
   undoState: function () { return { idx: hist.idx, n: hist.stack.length }; },
+  codeNow: function (h) { return DUAL && h != null ? codeNowInfo(simOf(h), headLocalT(h)) : codeNowInfo(sim, currentT); },
+  lineCodeHints: lineCodeHints,
   acceptedText: function () { return accepted; },
   previewSim: function () { return previewSim; },
   previewChangedBlocks: previewChangedBlocks,
