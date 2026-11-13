@@ -19,6 +19,9 @@
   const MAX_RECENT = 40;
 
   function $(id) { return document.getElementById(id); }
+  // dos_cabezas.html: la página maneja sus dos programas (HEAD1/HEAD2); no tocar la biblioteca
+  // de una cabeza ni restaurar el último programa de una cabeza.
+  const DUAL = !!window.__DUAL__;
   function toast(msg, ms) {
     if (typeof window.toast === "function") window.toast(msg, ms);
   }
@@ -427,7 +430,14 @@
 
   function addHeaderButtons() {
     const actions = document.querySelector(".hdr-actions");
-    if (!actions || $("btnLibrary")) return;
+    if (!actions || $("btnLibrary") || $("btnInstall")) return;
+    if (DUAL) {
+      const inst0 = document.createElement("button");
+      inst0.type = "button"; inst0.className = "btn primary"; inst0.id = "btnInstall";
+      inst0.textContent = "Instalar"; inst0.title = "Añadir a la pantalla de inicio"; inst0.hidden = true;
+      actions.insertBefore(inst0, $("btnOpen") || actions.firstElementChild);
+      return;
+    }
     const lib = document.createElement("button");
     lib.type = "button";
     lib.className = "btn";
@@ -455,10 +465,11 @@
   async function boot() {
     ensureUi();
     addHeaderButtons();
-    hookSimulator();
+    if (!DUAL) hookSimulator();
     setupInstall();
     installFileHandler();
     await registerSw();
+    if (DUAL) return;
     const fromShare = new URLSearchParams(location.search).has("share-target");
     if (fromShare) {
       hookSimulator();

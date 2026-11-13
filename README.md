@@ -18,6 +18,8 @@ En la pestaña **Código** la gráfica permanece visible para editar y ver la tr
 
 Puedes abrir tus propios archivos `.NCD` / `.nc` desde la biblioteca, el selector de archivos o, en Android, compartiendo el archivo hacia la app. Incluye un ejemplo de demostración generado (Copa O9000). No se publican programas reales de máquina.
 
+**Dos cabezas:** https://fequin54321maple-cell.github.io/variforma-simulador/dos_cabezas.html (botón **2 cabezas** en el simulador). Abre HEAD1 y HEAD2 como dos archivos o uno con marcas `(HEAD1)` / `(HEAD2)`; cada cabeza tiene su editor, ambas se dibujan en una gráfica vertical a lados opuestos del mandril y se animan juntas. Las cabezas se esperan en los códigos M configurados (por defecto M100–M199, en ⚙): la que llega primero se detiene hasta que la otra llega al mismo código. Incluye un EJEMPLO de demostración (no apto para máquina).
+
 La app funciona sin red después de la primera visita (service worker con caché). Si sale una versión nueva, aparece un aviso para actualizar.
 
 Esta página debe servirse por HTTPS (GitHub Pages lo cumple).

@@ -774,6 +774,37 @@
     }
   }
 
+  /* ---- Dos cabezas ---- */
+  .mode-link { text-decoration: none; color: inherit; white-space: nowrap; }
+  html.layout-mobile .mode-link { display: none; }
+  .head-bar { display: flex; gap: 4px; padding: 4px 6px; border-bottom: 1px solid var(--line); flex: none; background: var(--bg2); }
+  .head-bar[hidden] { display: none; }
+  .head-btn { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 4px 8px; min-height: 34px;
+    background: var(--bg3); border: 1px solid var(--line); border-radius: 6px; color: var(--muted); text-align: left; touch-action: manipulation; }
+  .head-btn.on { color: var(--text); border-color: var(--hc, var(--accent)); box-shadow: inset 0 -3px 0 var(--hc, var(--accent)); }
+  .head-btn .hdot { width: 10px; height: 10px; border-radius: 50%; background: var(--hc, var(--accent)); flex: none; }
+  .head-btn .hlbl { font-weight: 650; white-space: nowrap; }
+  .head-btn .hsub { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .head-btn .hsub .pend { color: #f5b942; }
+  html.layout-mobile .head-btn { min-height: 36px; font-size: var(--ui-font-m); }
+  .head-strip { position: absolute; top: 44px; right: 8px; z-index: 3; display: flex; flex-direction: column; gap: 4px; max-width: min(360px, 60%); }
+  .head-strip[hidden] { display: none; }
+  .hchip { display: flex; align-items: center; gap: 6px; padding: 3px 8px; min-height: 30px; text-align: left;
+    background: rgba(16,20,28,.9); border: 1px solid var(--line); border-left: 4px solid var(--hc, var(--accent)); border-radius: 6px;
+    font-size: 12px; color: var(--text); font-variant-numeric: tabular-nums; touch-action: manipulation; max-width: 100%; }
+  .hchip.on { border-color: var(--hc, var(--accent)); }
+  .hchip b { color: var(--hc, var(--accent)); flex: none; }
+  .hchip .ln { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .hchip .wt { color: #f5b942; font-weight: 650; white-space: nowrap; flex: none; }
+  .hchip .fin { color: var(--ok); white-space: nowrap; flex: none; }
+  html.layout-mobile .head-strip { top: calc(var(--ui-tap) + 4px); left: 6px; right: 6px; max-width: none; flex-direction: row; }
+  html.layout-mobile .hchip { flex: 1 1 0; font-size: 11.5px; min-height: 34px; padding: 2px 6px; }
+  .pref-field { display: flex; flex-direction: column; gap: 4px; color: var(--muted); margin: 8px 0 4px; }
+  .pref-field input[type=text] { background: var(--bg3); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font-size: 15px; color: var(--text); }
+  .pref-note { font-size: 12px; color: var(--muted); margin: 2px 0 8px; }
+  #syncInfo { font-size: 12px; line-height: 1.5; }
+  #syncInfo .sp { padding: 3px 0; border-bottom: 1px solid var(--line); }
+  #syncInfo .sp.err { color: var(--err); }
 </style>
 </head>
 <body>
@@ -792,6 +823,7 @@
       <label class="chk"><input type="checkbox" id="skipBD"> Omitir block delete (/)</label>
       <label class="chk"><input type="checkbox" id="showDisc" checked> Disco del rodillo</label>
       <button class="btn" id="btnPanel" type="button" title="Mostrar u ocultar el panel (editor, hallazgos)">Ocultar panel ▸</button>
+      <a class="btn mode-link" id="lnkMode" href="dos_cabezas.html" hidden title="Simulador de dos cabezas (HEAD1 / HEAD2)">2 cabezas</a>
     </div>
   </header>
   <div class="main" id="main">
@@ -799,6 +831,7 @@
       <div class="stage" id="stage">
         <canvas id="view"></canvas>
         <div class="plot-legend" id="plotLegend" aria-label="Leyenda G00 G01 G02 G03"></div>
+        <div class="head-strip" id="headStrip" hidden aria-label="Línea actual de cada cabeza"></div>
         <div class="pick-info" id="pickInfo" hidden>
           <div id="pickLineText"></div>
           <button class="btn primary" type="button" id="btnGoCode">Ir al código</button>
@@ -847,6 +880,10 @@
     </div>
     <div class="splitter" id="splitter" title="Arrastre para cambiar el tamaño · doble clic para ocultar el panel"></div>
     <aside class="side" id="side">
+      <div class="head-bar" id="headBar" hidden role="tablist" aria-label="Cabeza que se edita">
+        <button type="button" class="head-btn on" data-head="0" role="tab" id="headBtn0"><i class="hdot"></i><span class="hlbl">Cabeza 1</span><span class="hsub" id="headSub0"></span></button>
+        <button type="button" class="head-btn" data-head="1" role="tab" id="headBtn1"><i class="hdot"></i><span class="hlbl">Cabeza 2</span><span class="hsub" id="headSub1"></span></button>
+      </div>
       <div class="tabs">
         <button class="tab on" data-tab="editor" type="button">Editor</button>
         <button class="tab" data-tab="lint" type="button">Hallazgos<span class="cnt" id="cntLint"></span></button>
@@ -911,6 +948,13 @@
               <label class="chk"><input type="checkbox" id="showDiscMob" checked> Disco del rodillo</label>
             </div>
           </div>
+          <div class="data-sec" id="dataSyncWrap" hidden><h3>Dos cabezas · esperas</h3><div id="syncInfo"></div>
+            <div class="data-opts" style="margin-top:6px">
+              <button class="btn" type="button" id="btnDualDemo">Cargar ejemplo 2 cabezas</button>
+              <a class="btn" href="./" id="lnkSingleData">Simulador de 1 cabeza</a>
+            </div>
+          </div>
+          <div class="data-sec" id="dataModeWrap" hidden><a class="btn" href="dos_cabezas.html" id="lnkDualData">Simulador de 2 cabezas →</a></div>
           <div class="data-sec"><h3>Leyenda</h3><div class="legend" id="dataLegend"></div></div>
           <div class="data-sec" id="dataNotesWrap"><h3>Notas</h3><div id="dataNotes"></div></div>
           <div class="data-sec"><h3>Diferencias <span id="cntDiffMob"></span></h3><div id="dataDiff"></div></div>
@@ -941,6 +985,7 @@
       <p id="saveMeta"></p>
       <button class="btn primary" type="button" id="saveDownload">Descargar</button>
       <button class="btn primary" type="button" id="saveAcceptDownload" hidden>Aceptar y guardar</button>
+      <button class="btn" type="button" id="saveBoth" hidden title="Un solo archivo con (HEAD1) y (HEAD2)">Descargar las dos cabezas (un archivo)</button>
       <button class="btn" type="button" id="saveShare">Compartir…</button>
       <button class="btn" type="button" id="saveCopy">Copiar al portapapeles</button>
       <button class="btn" type="button" id="saveCancel">Cancelar</button>
@@ -977,6 +1022,20 @@
         </div>
         <button class="btn" type="button" id="btnResetColors">Restablecer</button>
       </div>
+      <div class="pref-sec" id="prefDual" hidden>
+        <h3>Dos cabezas</h3>
+        <div class="pref-colors">
+          <label>Cabeza 1 <input type="color" id="colH1" data-h="0" value="#22d3ee" aria-label="Color Cabeza 1"></label>
+          <label>Cabeza 2 <input type="color" id="colH2" data-h="1" value="#f472b6" aria-label="Color Cabeza 2"></label>
+        </div>
+        <label class="pref-field">Códigos M de espera
+          <input type="text" id="waitSpec" value="100-199" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Códigos M de espera">
+        </label>
+        <p class="pref-note">Rango o lista, p. ej. <b>100-199</b> o <b>107,108,109</b>. Cada espera de una cabeza se empareja, en orden, con el mismo código de la otra.</p>
+        <label class="chk"><input type="checkbox" id="dualSwap"> Cabeza 1 a la izquierda</label>
+        <label class="chk"><input type="checkbox" id="dualZDown"> Z mayor hacia abajo</label>
+      </div>
+      <div class="pref-sec"><a class="btn" id="lnkModePrefs" href="dos_cabezas.html" hidden>Simulador de 2 cabezas →</a></div>
       <button class="btn primary" type="button" id="prefsClose">Listo</button>
     </div>
   </div>
@@ -1792,6 +1851,157 @@ function diffStatus(a, b) {
   return { status, delBefore, hunks, changed };
 }
 
+/* ---------------- Dos cabezas: división HEAD1/HEAD2 y sincronización por códigos M de espera ---------------- */
+// Espejo exacto de simulator.py (split_heads, parse_wait_spec, find_waits, sync_timeline).
+const DEFAULT_WAIT_SPEC = "100-199";
+const HEAD_MARK_RE = /^\s*\(\s*(?:HEAD|CABEZA|PATH|CAB)\s*[-_ ]?\s*([12])\b[^)]*\)\s*$/i;
+
+function splitHeads(text) {
+  const lines = String(text == null ? "" : text).replace(/\r\n?/g, "\n").split("\n");
+  const parts = { 1: [], 2: [] };
+  let cur = 0, found = 0, pre = [];
+  for (const raw of lines) {
+    const m = raw.match(HEAD_MARK_RE);
+    if (m) { cur = parseInt(m[1], 10); found |= cur; continue; }
+    if (cur) parts[cur].push(raw); else pre.push(raw);
+  }
+  const trim = arr => { const a = arr.slice(); while (a.length && !a[a.length - 1].trim()) a.pop(); while (a.length && !a[0].trim()) a.shift(); return a.join("\n") + (a.length ? "\n" : ""); };
+  return { found: found === 3, head1: trim(parts[1]), head2: trim(parts[2]), preamble: trim(pre) };
+}
+
+function joinHeads(head1, head2) {
+  const clean = s => String(s == null ? "" : s).replace(/\r\n?/g, "\n").replace(/\n+$/, "");
+  return "(HEAD1)\n" + clean(head1) + "\n(HEAD2)\n" + clean(head2) + "\n";
+}
+
+function parseWaitSpec(spec) {
+  const out = [];
+  String(spec == null ? DEFAULT_WAIT_SPEC : spec).split(/[\s,;]+/).forEach(tok => {
+    tok = tok.trim().replace(/^M/i, "");
+    if (!tok) return;
+    const r = tok.match(/^(\d+)\s*-\s*M?(\d+)$/i);
+    if (r) {
+      let a = parseInt(r[1], 10), b = parseInt(r[2], 10);
+      if (a > b) { const t = a; a = b; b = t; }
+      for (let k = a; k <= b && k - a < 10000; k++) out.push(k);
+    } else if (/^\d+$/.test(tok)) out.push(parseInt(tok, 10));
+  });
+  return Array.from(new Set(out)).sort((x, y) => x - y);
+}
+
+function blockMCodes(b) {
+  const body = stripComments((b && (b.raw != null ? b.raw : b.text)) || "");
+  return intWords(parseWords(body), "M");
+}
+
+function findWaits(sim, waitCodes) {
+  const set = new Set(waitCodes || parseWaitSpec(DEFAULT_WAIT_SPEC));
+  const out = [];
+  ((sim && sim.blocks) || []).forEach((b, idx) => {
+    if (b.skipped || b.kind === "skip") return;
+    blockMCodes(b).forEach(m => { if (set.has(m)) out.push({ code: m, t: b.t0, line: b.line, idx: idx }); });
+  });
+  return out;
+}
+
+function syncTimeline(simA, simB, opts) {
+  opts = opts || {};
+  const codes = opts.waitCodes || parseWaitSpec(opts.waitSpec);
+  const sims = [simA, simB];
+  const totals = sims.map(s => (s && s.cycle && s.cycle.total_s) || 0);
+  const waits = sims.map(s => findWaits(s, codes));
+  const segs = [[{ g: 0, l: 0, wait: false, code: null }], [{ g: 0, l: 0, wait: false, code: null }]];
+  const off = [0, 0];
+  const pairs = [], issues = [];
+  const n = Math.max(waits[0].length, waits[1].length);
+  let broken = -1;
+  for (let i = 0; i < n; i++) {
+    const a = waits[0][i], b = waits[1][i];
+    if (!a || !b) {
+      const w = a || b, h = a ? 0 : 1;
+      issues.push({ kind: "unmatched", head: h, code: w.code, line: w.line, index: i });
+      continue;
+    }
+    if (a.code !== b.code) { broken = i; break; }
+    const arrive = [a.t + off[0], b.t + off[1]];
+    const rel = Math.max(arrive[0], arrive[1]);
+    let waiter = null;
+    [a, b].forEach((w, h) => {
+      if (arrive[h] < rel - 1e-9) { segs[h].push({ g: arrive[h], l: w.t, wait: true, code: w.code }); waiter = h; }
+      segs[h].push({ g: rel, l: w.t, wait: false, code: null });
+      off[h] = rel - w.t;
+    });
+    pairs.push({ index: i, code: a.code, lines: [a.line, b.line], arrive: arrive, release: rel,
+                 waiter: waiter, wait_s: waiter == null ? 0 : rel - arrive[waiter] });
+  }
+  if (broken >= 0) {
+    for (let h = 0; h < 2; h++) {
+      for (let i = broken; i < waits[h].length; i++) {
+        const w = waits[h][i];
+        const other = waits[1 - h][i];
+        issues.push({ kind: i === broken ? "order" : "unmatched", head: h, code: w.code, line: w.line, index: i,
+                      other_code: other ? other.code : null });
+      }
+    }
+  }
+  const ends = [totals[0] + off[0], totals[1] + off[1]];
+  return { codes: codes, waits: waits, pairs: pairs, issues: issues, segs: segs, offsets: off,
+           totals: totals, ends: ends, total: Math.max(ends[0], ends[1]) };
+}
+
+function syncLocalTime(sync, h, g) {
+  if (!sync) return g;
+  const segs = sync.segs[h], tot = sync.totals[h];
+  let s = segs[0];
+  for (let i = 0; i < segs.length; i++) { if (segs[i].g <= g + 1e-9) s = segs[i]; else break; }
+  if (s.wait) return s.l;
+  return Math.max(0, Math.min(tot, s.l + (g - s.g)));
+}
+
+function syncGlobalTime(sync, h, l) {
+  if (!sync) return l;
+  const segs = sync.segs[h], tot = sync.totals[h];
+  for (let i = 0; i < segs.length; i++) {
+    const s = segs[i];
+    if (s.wait) continue;
+    const next = segs[i + 1];
+    const lEnd = next ? next.l : tot;
+    if (l >= s.l - 1e-9 && l <= lEnd + 1e-9) return s.g + (l - s.l);
+  }
+  const last = segs[segs.length - 1];
+  return last.g + Math.max(0, l - last.l);
+}
+
+function syncWaitingAt(sync, h, g) {
+  if (!sync) return null;
+  const segs = sync.segs[h];
+  for (let i = 0; i < segs.length; i++) {
+    const s = segs[i], next = segs[i + 1];
+    if (s.wait && g >= s.g - 1e-9 && next && g < next.g - 1e-9) return { code: s.code, since: s.g, until: next.g, local: s.l };
+  }
+  return null;
+}
+
+function waitLintIssues(sync, h) {
+  const out = [];
+  if (!sync) return out;
+  const name = ["HEAD1", "HEAD2"];
+  sync.issues.forEach(it => {
+    if (it.head !== h) return;
+    if (it.kind === "order") {
+      out.push({ level: "error", code: "WAIT_ORDER_MISMATCH", line: it.line,
+        message: "M" + it.code + " (espera n.º " + (it.index + 1) + ") no coincide con " +
+          (it.other_code != null ? "M" + it.other_code : "nada") + " en " + name[1 - h] +
+          ". Las esperas deben ir en el mismo orden en las dos cabezas; desde aquí no se sincroniza." });
+    } else {
+      out.push({ level: "error", code: "WAIT_UNMATCHED", line: it.line,
+        message: "M" + it.code + " (espera n.º " + (it.index + 1) + ") no tiene pareja en " + name[1 - h] +
+          ". En la máquina esta cabeza se quedaría esperando." });
+    }
+  });
+  return out;
+}
+
 /* ---------------- UI ---------------- */
 const $ = id => document.getElementById(id);
 const canvas = $("view");
@@ -1823,6 +2033,19 @@ let reparseTimer = 0, histTimer = 0, saveTimer = 0, toastTimer = 0;
 let autosaveState = "—";
 let statusLineOverride = null;
 const UI_KEY = "variforma-sim-ui";
+/* ---------- Modo dos cabezas (dos_cabezas.html o ?modo=dos) ---------- */
+const DUAL = !!((typeof window !== "undefined" && window.__DUAL__) || (PRELOADED && PRELOADED.dual) ||
+  /(?:^|[?&#])modo=dos(?:&|$)/.test(((typeof location !== "undefined" && location.search) || "") + ((typeof location !== "undefined" && location.hash) || "")));
+const VERT = DUAL;
+const HEAD_IDS = ["HEAD1", "HEAD2"];
+const HEAD_LABELS = ["Cabeza 1", "Cabeza 2"];
+const HEAD_SHORT = ["C1", "C2"];
+const DEFAULT_HEAD_COLORS = ["#22d3ee", "#f472b6"];
+const DUAL_LAST_KEY = "variforma-2cab-last";
+let active = 0, heads = [null, null], dualSync = null, globalT = 0, lastDerivedT = null, curSign = 1;
+let headColors = DEFAULT_HEAD_COLORS.slice(), waitSpec = DEFAULT_WAIT_SPEC, dualSwap = false, dualZDown = false, dualLoading = false;
+function zDirV() { return dualZDown ? -1 : 1; }
+function signOf(h) { return ((h === 0) !== !!dualSwap) ? 1 : -1; }
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c]));
@@ -1988,6 +2211,7 @@ function computeSimulation(text) {
       ? "Reglas esenciales del navegador"
       : "Programa editado: reglas esenciales del navegador (el lint completo y la colisión se recalculan con cli.py)";
   }
+  if (DUAL) all = all.concat(dualWaitFindings(s));
   const byLine = {};
   all.forEach(f => { if (f.line != null) (byLine[f.line] || (byLine[f.line] = [])).push(f); });
   s.blocks.forEach(b => { b.lint = byLine[b.line] ? byLine[b.line].slice() : []; });
@@ -2077,6 +2301,7 @@ function updatePendingUI() {
     $("pendingMsg").title = n ? ("Sin aceptar · " + n + " tramo(s) en vista previa") : "Sin aceptar";
   }
   if ($("app")) $("app").classList.toggle("has-pending", pend);
+  if (DUAL) updateHeadBar();
 }
 function acceptEdits(opts) {
   opts = opts || {};
@@ -2120,8 +2345,9 @@ function cancelEdits(opts) {
 function loadSim(s, o) {
   o = o || {};
   sim = s;
-  $("fname").textContent = s.filename || "programa.NCD";
-  document.title = "Simulador Variforma — " + (s.filename || "");
+  if (DUAL) dualResync();
+  $("fname").textContent = DUAL ? (HEAD_LABELS[active] + " · " + (s.filename || "programa.NCD")) : (s.filename || "programa.NCD");
+  document.title = (DUAL ? "Simulador 2 cabezas Variforma — " : "Simulador Variforma — ") + (s.filename || "");
   buildListing(); buildLegend(); buildNotes();
   if (!o.keepView || !view.ready) fitAll();
   const total = (s.cycle && s.cycle.total_s) || 0;
@@ -2222,6 +2448,7 @@ function renderDecor() {
 }
 function editorHighlightLine() {
   if (selLine) return selLine;
+  if (DUAL) { const wl = waitLineOf(active); if (wl) return wl; }
   const idx = blockIndexAt(currentT);
   if (sim && idx >= 0 && sim.blocks[idx]) return sim.blocks[idx].line;
   return editorCursorLine();
@@ -2298,7 +2525,7 @@ function onEdited(immediate, sync) {
 
 /* ---------- Autoguardado ---------- */
 function hashStr(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(16); }
-function asKey() { return "variforma-sim-edit:" + originalName + ":" + hashStr(original); }
+function asKey() { return (DUAL ? "variforma-2cab-edit:" + HEAD_IDS[active] + ":" : "variforma-sim-edit:") + originalName + ":" + hashStr(original); }
 function scheduleAutosave() { clearTimeout(saveTimer); saveTimer = setTimeout(doAutosave, 400); }
 function doAutosave() {
   const unchanged = ed.value === original && accepted === original;
@@ -2325,6 +2552,7 @@ function showRestoreBanner(saved) {
 }
 
 function openProgram(text, name, preloaded) {
+  if (DUAL && !dualLoading) return dualOpen(text, name, preloaded);
   selLine = 0; selBlocks = []; selNoMove = false; selSource = null; selPos = null;
   previewSim = null;
   original = String(text).replace(/\r\n?/g, "\n");
@@ -2518,7 +2746,10 @@ function buildLegend() {
   }
   if ($("legend")) $("legend").innerHTML = parts.join("");
   if ($("dataLegend")) $("dataLegend").innerHTML = parts.join("");
+  if (DUAL) [1, 0].forEach(h => parts.unshift('<span style="color:' + headColor(h) + '"><i class="sw" style="border-color:' + headColor(h) + ';border-top-width:3px"></i>' + HEAD_LABELS[h] + "</span>"));
+  if (DUAL) { if ($("legend")) $("legend").innerHTML = parts.join(""); if ($("dataLegend")) $("dataLegend").innerHTML = parts.join(""); }
   const plotParts = gLegendParts();
+  if (DUAL) [1, 0].forEach(h => plotParts.unshift('<span style="color:' + headColor(h) + '"><i class="sw" style="border-color:' + headColor(h) + ';border-top-width:3px"></i>' + HEAD_SHORT[h] + "</span>"));
   if (hasPending()) plotParts.push('<span style="color:' + PREVIEW_COLOR + '"><i class="sw dash" style="border-color:' + PREVIEW_COLOR + '"></i>Vista previa</span>');
   if (accepted && original && accepted !== original) plotParts.push('<span style="color:' + ORIG_GHOST_COLOR + '"><i class="sw dash" style="border-color:' + ORIG_GHOST_COLOR + '"></i>Original</span>');
   if ($("plotLegend")) $("plotLegend").innerHTML = plotParts.join("");
@@ -2558,24 +2789,26 @@ function highlightListing(idx) {
 }
 
 /* ---------- Tiempo / estado ---------- */
-function blockIndexAt(t) {
-  if (!sim || !sim.blocks.length) return -1;
+function blockIndexAt(t, simArg) {
+  const sim_ = simArg || sim;
+  if (!sim_ || !sim_.blocks.length) return -1;
   let last = 0;
-  for (let i = 0; i < sim.blocks.length; i++) {
-    const b = sim.blocks[i];
+  for (let i = 0; i < sim_.blocks.length; i++) {
+    const b = sim_.blocks[i];
     if (b.t1 < t - 1e-12) { last = i; continue; }
     if (b.t0 <= t && t <= b.t1 + 1e-12) return i;
     if (b.t0 > t) return last;
     last = i;
   }
-  return sim.blocks.length - 1;
+  return sim_.blocks.length - 1;
 }
-function stateAt(t) {
+function stateAt(t, simArg) {
+  const sim_ = simArg || sim;
   const empty = { x: null, z: null, f: null, s: null, tool: null, g50_x: null, g50_z: null, burner: false, diecoat: false, spindle: false, block: null, g: null };
-  if (!sim || !sim.blocks.length) return empty;
+  if (!sim_ || !sim_.blocks.length) return empty;
   let x = null, z = null, info = {};
-  for (let i = 0; i < sim.blocks.length; i++) {
-    const b = sim.blocks[i];
+  for (let i = 0; i < sim_.blocks.length; i++) {
+    const b = sim_.blocks[i];
     if (b.t1 < t - 1e-12) { if (b.end_x != null) { x = b.end_x; z = b.end_z; } info = b; continue; }
     if (b.t0 <= t && t <= b.t1 + 1e-12) {
       const pts = b.points || [];
@@ -2628,10 +2861,10 @@ function updateReadout() {
       escapeHtml(formatSelLineText()) +
       (inCodeTab() ? "" : ' <button class="btn" type="button" id="btnGoCodeRo" style="margin-left:6px;padding:2px 8px;font-size:11px">Ir al código</button>') +
       "</div>") : "");
-  $("readout").innerHTML = html;
+  $("readout").innerHTML = DUAL ? dualReadoutHtml() + html : html;
   const goRo = $("btnGoCodeRo");
   if (goRo) goRo.addEventListener("click", goToCodeFromPick);
-  if ($("dataReadout")) $("dataReadout").innerHTML = html;
+  if ($("dataReadout")) $("dataReadout").innerHTML = DUAL ? dualReadoutHtml() + html : html;
   const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
   set("rsX", fmt(st.x, 2));
   set("rsZ", fmt(st.z, 2));
@@ -2644,16 +2877,28 @@ function updateReadout() {
 /* ---------- Vista (escala igual en Z y X) ---------- */
 function cw() { return canvas.clientWidth; }
 function chh() { return canvas.clientHeight; }
-function w2s(z, r) { return [cw() / 2 + (view.cz - z) * view.s, chh() / 2 - (r - view.cr) * view.s]; }
-function s2w(x, y) { return [view.cz - (x - cw() / 2) / view.s, view.cr - (y - chh() / 2) / view.s]; }
+function w2sRaw(z, r) {
+  if (VERT) return [cw() / 2 + (r - view.cr) * view.s, chh() / 2 - zDirV() * (z - view.cz) * view.s];
+  return [cw() / 2 + (view.cz - z) * view.s, chh() / 2 - (r - view.cr) * view.s];
+}
+function w2s(z, r) { return w2sRaw(z, curSign === 1 ? r : r * curSign); }
+function s2w(x, y) {
+  if (VERT) return [view.cz - zDirV() * (y - chh() / 2) / view.s, view.cr + (x - cw() / 2) / view.s];
+  return [view.cz - (x - cw() / 2) / view.s, view.cr - (y - chh() / 2) / view.s];
+}
 function plotCenter() { return [PAD_L + (cw() - PAD_L) / 2, (chh() - PAD_B) / 2]; }
-function centerOn(z, r) { const [px, py] = plotCenter(); view.cz = z + (px - cw() / 2) / view.s; view.cr = r + (py - chh() / 2) / view.s; }
+function shiftWorldTo(z, r, x, y) { const q = s2w(x, y); view.cz += z - q[0]; view.cr += r - q[1]; }
+function centerOn(z, r) {
+  const [px, py] = plotCenter();
+  if (VERT) { view.cz = z; view.cr = r; shiftWorldTo(z, r, px, py); return; }
+  view.cz = z + (px - cw() / 2) / view.s; view.cr = r + (py - chh() / 2) / view.s;
+}
 function clampScale(s) { return Math.max(0.02, Math.min(400, s)); }
 function fitBox(z0, z1, r0, r1, pad) {
   pad = pad == null ? 30 : pad;
   const w = Math.max(50, cw() - PAD_L - 2 * pad), h = Math.max(50, chh() - PAD_B - 2 * pad);
   const dz = Math.max(Math.abs(z1 - z0), 1e-3), dr = Math.max(Math.abs(r1 - r0), 1e-3);
-  view.s = clampScale(Math.min(w / dz, h / dr));
+  view.s = clampScale(VERT ? Math.min(w / dr, h / dz) : Math.min(w / dz, h / dr));
   centerOn((z0 + z1) / 2, (r0 + r1) / 2);
   view.ready = true;
 }
@@ -2665,6 +2910,7 @@ function bounds(filter) {
   return isFinite(zmin) ? { zmin, zmax, rmin, rmax } : null;
 }
 function fitAll() {
+  if (DUAL) return dualFitAll();
   const b = bounds();
   if (!b) { view.s = 1; centerOn(200, 200); view.ready = true; return; }
   fitBox(b.zmin, b.zmax, b.rmin, b.rmax, 30);
@@ -2672,22 +2918,25 @@ function fitAll() {
 function zoomAt(mx, my, f) {
   const [z, r] = s2w(mx, my);
   view.s = clampScale(view.s * f);
-  view.cz = z + (mx - cw() / 2) / view.s;
-  view.cr = r + (my - chh() / 2) / view.s;
+  if (VERT) shiftWorldTo(z, r, mx, my);
+  else {
+    view.cz = z + (mx - cw() / 2) / view.s;
+    view.cr = r + (my - chh() / 2) / view.s;
+  }
   draw();
 }
 function zoomRoller() {
   const st = stateAt(currentT);
   if (st.x == null) { toast("No hay rodillo en posición conocida en este instante."); return; }
-  const half = Math.max(14, tipFor(st.tool) * 2.6);
-  fitBox(st.z - half, st.z + half, st.x / 2 - half, st.x / 2 + half, 10);
+  const half = Math.max(14, tipFor(st.tool) * 2.6), rr = curSign * st.x / 2;
+  fitBox(st.z - half, st.z + half, rr - half, rr + half, 10);
   draw();
 }
 function zoomFlange() {
   const b = bounds(bl => bl.kind === "move" && bl.g !== 0 && toolRole(bl.tool, sim && sim.tools) === "flanging");
   if (!b) { toast("No hay pestañado (avances con T0205) en este programa."); return false; }
-  const m = 8;
-  fitBox(b.zmin - m, b.zmax + m, b.rmin - m, b.rmax + m, 20);
+  const m = 8, ra = curSign * b.rmin, rb = curSign * b.rmax;
+  fitBox(b.zmin - m, b.zmax + m, Math.min(ra, rb) - m, Math.max(ra, rb) + m, 20);
   draw();
   return true;
 }
@@ -2713,6 +2962,7 @@ function drawPolyline(pts, stroke, width, dash, alpha) {
   ctx.setLineDash(dash || []); ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.stroke(); ctx.restore();
 }
 function drawGrid() {
+  if (VERT) return drawGridV();
   const w = cw(), h = chh();
   const [zL, rT] = s2w(PAD_L, 0), [zR, rB] = s2w(w, h - PAD_B);
   const zMaj = niceStep(90 / view.s), zMin = minorStep(zMaj, view.s);
@@ -2731,6 +2981,7 @@ function drawGrid() {
   return { zMajL, dMajL, zMaj, dMaj, zMin, dMin };
 }
 function drawAxes(g) {
+  if (VERT) return drawAxesV(g);
   const w = cw(), h = chh();
   ctx.save();
   ctx.fillStyle = "rgba(14,17,22,.94)"; ctx.fillRect(0, 0, PAD_L, h); ctx.fillRect(0, h - PAD_B, w, PAD_B);
@@ -2828,17 +3079,28 @@ function draw() {
   const g = drawGrid();
   if (sim) {
     const geom = sim.geometry || {};
-    if (geom.mandrel && geom.mandrel.length) {
-      ctx.save(); ctx.beginPath();
-      const a0 = w2s(geom.mandrel[0][0], 0); ctx.moveTo(a0[0], a0[1]);
-      geom.mandrel.forEach(p => { const q = w2s(p[0], p[1] / 2); ctx.lineTo(q[0], q[1]); });
-      const last = geom.mandrel[geom.mandrel.length - 1], a1 = w2s(last[0], 0); ctx.lineTo(a1[0], a1[1]); ctx.closePath();
-      ctx.fillStyle = "rgba(232,224,208,0.10)"; ctx.fill(); ctx.restore();
-      drawPolyline(geom.mandrel, "#e8e0d0", 2.4, [], 1);
+    const signSave = curSign;
+    (DUAL ? [1, -1] : [curSign]).forEach(sg => {
+      curSign = sg;
+      if (geom.mandrel && geom.mandrel.length) {
+        ctx.save(); ctx.beginPath();
+        const a0 = w2s(geom.mandrel[0][0], 0); ctx.moveTo(a0[0], a0[1]);
+        geom.mandrel.forEach(p => { const q = w2s(p[0], p[1] / 2); ctx.lineTo(q[0], q[1]); });
+        const last = geom.mandrel[geom.mandrel.length - 1], a1 = w2s(last[0], 0); ctx.lineTo(a1[0], a1[1]); ctx.closePath();
+        ctx.fillStyle = "rgba(232,224,208,0.10)"; ctx.fill(); ctx.restore();
+        drawPolyline(geom.mandrel, "#e8e0d0", 2.4, [], 1);
+      }
+      if (geom.sheet && geom.sheet.length) drawPolyline(geom.sheet, "#93c5fd", 1.2, [6, 4], 0.9);
+    });
+    curSign = signSave;
+    if (VERT) {
+      const zA = s2w(PAD_L, 0)[0], zB = s2w(PAD_L, h - PAD_B)[0];
+      drawPolyline([[zA, 0], [zB, 0]], "#4b5563", 1, [2, 4], 0.8);
+    } else {
+      const [zA] = s2w(PAD_L, 0), [zB] = s2w(w, 0);
+      drawPolyline([[zA, 0], [zB, 0]], "#4b5563", 1, [2, 4], 0.8);
     }
-    if (geom.sheet && geom.sheet.length) drawPolyline(geom.sheet, "#93c5fd", 1.2, [6, 4], 0.9);
-    const [zA] = s2w(PAD_L, 0), [zB] = s2w(w, 0);
-    drawPolyline([[zA, 0], [zB, 0]], "#4b5563", 1, [2, 4], 0.8);
+    if (DUAL) drawOtherHead();
     const idx = blockIndexAt(currentT);
     const showOrig = !!(origSim && origSim.blocks && accepted && original && accepted !== original);
     if (showOrig) {
@@ -2865,8 +3127,8 @@ function draw() {
       ctx.lineWidth = 1.5; ctx.strokeStyle = "#0e1116"; ctx.stroke();
     });
     const st = stateAt(currentT);
-    if (st.x != null && st.z != null) drawRoller(st.z, st.x, st.tool);
-  }
+    if (st.x != null && st.z != null) { drawRoller(st.z, st.x, st.tool); if (DUAL) drawHeadTag(active, st); }
+  } else if (DUAL) drawOtherHead();
   if (drag && drag.mode === "box" && drag.moved) {
     ctx.save(); ctx.strokeStyle = "#3b9eff"; ctx.setLineDash([5, 4]); ctx.fillStyle = "rgba(59,158,255,.10)";
     const x = Math.min(drag.x0, drag.x), y = Math.min(drag.y0, drag.y), bw = Math.abs(drag.x - drag.x0), bh = Math.abs(drag.y - drag.y0);
@@ -2875,12 +3137,15 @@ function draw() {
   drawAxes(g);
 }
 function redraw() {
+  if (DUAL) dualSyncTimes();
   const idx = blockIndexAt(currentT);
-  if (follow) { const st = stateAt(currentT); if (st.x != null) centerOn(st.z, st.x / 2); }
-  const total = (sim && sim.cycle && sim.cycle.total_s) || 0;
-  $("timeline").value = String(total > 0 ? Math.round((currentT / total) * 1000) : 0);
-  $("timeLbl").textContent = fmtTime(currentT) + " / " + fmtTime(total);
+  if (follow) { const st = stateAt(currentT); if (st.x != null) centerOn(st.z, curSign * st.x / 2); }
+  const total = DUAL ? dualTotal() : ((sim && sim.cycle && sim.cycle.total_s) || 0);
+  const tNow = DUAL ? globalT : currentT;
+  $("timeline").value = String(total > 0 ? Math.round((tNow / total) * 1000) : 0);
+  $("timeLbl").textContent = fmtTime(tNow) + " / " + fmtTime(total);
   draw(); updateReadout(); updatePickInfo(); highlightListing(idx);
+  if (DUAL) updateHeadStrip();
   highlightEditorLine(editorHighlightLine(), true);
 }
 function resize() {
@@ -2888,7 +3153,9 @@ function resize() {
   let keep = null;
   if (view.ready && lastSize.w) {
     const px = PAD_L + (lastSize.w - PAD_L) / 2, py = (lastSize.h - PAD_B) / 2;
-    keep = [view.cz - (px - lastSize.w / 2) / view.s, view.cr - (py - lastSize.h / 2) / view.s];
+    keep = VERT
+      ? [view.cz - zDirV() * (py - lastSize.h / 2) / view.s, view.cr + (px - lastSize.w / 2) / view.s]
+      : [view.cz - (px - lastSize.w / 2) / view.s, view.cr - (py - lastSize.h / 2) / view.s];
   }
   canvas.width = Math.max(1, Math.round(w * dpr)); canvas.height = Math.max(1, Math.round(h * dpr));
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -2937,11 +3204,16 @@ function nearestBlockAt(x, y, opts) {
 }
 function pick(x, y, opts) {
   opts = opts || {};
-  const best = nearestBlockAt(x, y, opts);
+  let best = nearestBlockAt(x, y, opts);
+  if (DUAL) {
+    const ob = nearestOtherHeadAt(x, y, opts);
+    if (ob && (!best || ob.d < best.d - 2)) { switchHead(1 - active); best = nearestBlockAt(x, y, opts); }
+  }
   if (!best) return null;
   const b = best.b;
   playing = false; syncPlayBtn();
   currentT = b.t0 + best.frac * ((b.t1 || b.t0) - b.t0);
+  lastDerivedT = null;
   selectLine(b.line, { source: "plot", silent: false, keepTime: true, revealEditor: true, focus: false, scrollEditor: true });
   if (!inCodeTab()) updatePickInfo();
   return b;
@@ -2965,8 +3237,11 @@ function updatePinch() {
   const dist = Math.hypot(pts[0][0] - pts[1][0], pts[0][1] - pts[1][1]) || 1;
   const mx = (pts[0][0] + pts[1][0]) / 2, my = (pts[0][1] + pts[1][1]) / 2;
   view.s = clampScale(pinch.s * (dist / pinch.dist));
-  view.cz = pinch.world[0] + (mx - cw() / 2) / view.s;
-  view.cr = pinch.world[1] + (my - chh() / 2) / view.s;
+  if (VERT) shiftWorldTo(pinch.world[0], pinch.world[1], mx, my);
+  else {
+    view.cz = pinch.world[0] + (mx - cw() / 2) / view.s;
+    view.cr = pinch.world[1] + (my - chh() / 2) / view.s;
+  }
   if (follow) { follow = false; $("zFollow").classList.remove("on"); }
   draw();
 }
@@ -2990,7 +3265,8 @@ canvas.addEventListener("pointermove", ev => {
   const slop = drag.pointerType === "touch" ? 8 : 4;
   if (Math.hypot(drag.x - drag.x0, drag.y - drag.y0) > slop) drag.moved = true;
   if (drag.mode === "pan" && drag.moved) {
-    view.cz += (x - drag.lx) / view.s; view.cr += (y - drag.ly) / view.s;
+    if (VERT) { const a = s2w(drag.lx, drag.ly), c = s2w(x, y); view.cz -= c[0] - a[0]; view.cr -= c[1] - a[1]; }
+    else { view.cz += (x - drag.lx) / view.s; view.cr += (y - drag.ly) / view.s; }
     if (follow) { follow = false; $("zFollow").classList.remove("on"); }
   }
   drag.lx = x; drag.ly = y;
@@ -3303,16 +3579,24 @@ function tick(ts) {
   if (playing) {
     if (!lastTs) lastTs = ts;
     const dt = (ts - lastTs) / 1000; lastTs = ts;
-    const total = (sim && sim.cycle && sim.cycle.total_s) || 0;
-    currentT += dt * (parseFloat($("speed").value) || 1);
-    if (currentT >= total) { currentT = total; playing = false; syncPlayBtn(); }
+    if (DUAL) {
+      const total = dualTotal();
+      globalT += dt * (parseFloat($("speed").value) || 1);
+      if (globalT >= total) { globalT = total; playing = false; syncPlayBtn(); }
+      dualSetGlobal(globalT);
+    } else {
+      const total = (sim && sim.cycle && sim.cycle.total_s) || 0;
+      currentT += dt * (parseFloat($("speed").value) || 1);
+      if (currentT >= total) { currentT = total; playing = false; syncPlayBtn(); }
+    }
     redraw();
   } else lastTs = 0;
   requestAnimationFrame(tick);
 }
 $("btnPlay").addEventListener("click", () => {
+  if (DUAL) { dualSyncTimes(); if (globalT >= dualTotal() - 1e-6) dualSetGlobal(0); }
   const total = (sim && sim.cycle && sim.cycle.total_s) || 0;
-  if (currentT >= total - 1e-6) currentT = 0;
+  if (!DUAL && currentT >= total - 1e-6) currentT = 0;
   playing = !playing; syncPlayBtn();
 });
 function stepBlock(dir) {
@@ -3326,7 +3610,8 @@ function stepBlock(dir) {
 $("btnPrev").addEventListener("click", () => stepBlock(-1));
 $("btnNext").addEventListener("click", () => stepBlock(1));
 $("timeline").addEventListener("input", e => {
-  currentT = ((sim && sim.cycle && sim.cycle.total_s) || 0) * (parseInt(e.target.value, 10) / 1000);
+  if (DUAL) dualSetGlobal(dualTotal() * (parseInt(e.target.value, 10) / 1000));
+  else currentT = ((sim && sim.cycle && sim.cycle.total_s) || 0) * (parseInt(e.target.value, 10) / 1000);
   playing = false; syncPlayBtn(); redraw();
 });
 $("zIn").addEventListener("click", () => { const [x, y] = plotCenter(); zoomAt(x, y, 1.5); });
@@ -3390,7 +3675,7 @@ function ensureBlockVisible(b) {
   const pts = (b.points && b.points.length) ? b.points : null;
   if (!pts || pts.length < 1) {
     if (b.end_z == null || b.end_x == null) return false;
-    if (!pointOnScreen(b.end_z, b.end_x / 2, 24)) { centerOn(b.end_z, b.end_x / 2); return true; }
+    if (!pointOnScreen(b.end_z, b.end_x / 2, 24)) { centerOn(b.end_z, curSign * b.end_x / 2); return true; }
     return false;
   }
   let zmin = Infinity, zmax = -Infinity, rmin = Infinity, rmax = -Infinity, anyOff = false;
@@ -3404,9 +3689,9 @@ function ensureBlockVisible(b) {
   const pad = 28;
   const vw = Math.max(40, cw() - PAD_L - 2 * pad), vh = Math.max(40, chh() - PAD_B - 2 * pad);
   const dz = Math.max(Math.abs(zmax - zmin), 1e-3), dr = Math.max(Math.abs(rmax - rmin), 1e-3);
-  const needS = Math.min(vw / dz, vh / dr);
-  if (view.s <= needS * 1.05) centerOn((zmin + zmax) / 2, (rmin + rmax) / 2);
-  else fitBox(zmin, zmax, rmin, rmax, pad);
+  const needS = VERT ? Math.min(vw / dr, vh / dz) : Math.min(vw / dz, vh / dr);
+  if (view.s <= needS * 1.05) centerOn((zmin + zmax) / 2, curSign * (rmin + rmax) / 2);
+  else fitBox(zmin, zmax, curSign * rmin, curSign * rmax, pad);
   return true;
 }
 function keepEditorLineVisible() {
@@ -3569,6 +3854,7 @@ function selectLine(line, opts) {
   selNoMove = !!selLine && !motion.length;
   selPos = selNoMove ? positionAtLine(selLine) : (motion[0] ? { z: motion[0].end_z, x: motion[0].end_x, tool: motion[0].tool } : null);
   if (!playing && !opts.keepTime) {
+    lastDerivedT = null;
     if (motion.length) {
       const b = motion[0];
       const dur = (b.t1 || b.t0) - b.t0;
@@ -3581,7 +3867,7 @@ function selectLine(line, opts) {
   if (followCursor && vis && !opts.skipEnsure) {
     if (motion[0]) ensureBlockVisible(motion[0]);
     else if (selPos) {
-      if (!pointOnScreen(selPos.z, selPos.x / 2, 24)) centerOn(selPos.z, selPos.x / 2);
+      if (!pointOnScreen(selPos.z, selPos.x / 2, 24)) centerOn(selPos.z, curSign * selPos.x / 2);
     }
     if (hasPending()) {
       const pb = previewBlockForLine(selLine);
@@ -3682,17 +3968,24 @@ function readFile(f) {
     const text = String(reader.result);
     const same = PRELOADED && PRELOADED.text && f.name === PRELOADED.filename && text.replace(/\r\n?/g, "\n") === PRELOADED.text.replace(/\r\n?/g, "\n");
     openProgram(text, f.name, same);
-    toast("Abierto " + f.name);
+    toast("Abierto " + f.name + (DUAL && !splitHeads(text).found ? " en " + HEAD_LABELS[active] : ""));
   };
   reader.readAsText(f);
 }
-$("fileIn").addEventListener("change", ev => { const f = ev.target.files && ev.target.files[0]; if (f) readFile(f); ev.target.value = ""; });
+$("fileIn").addEventListener("change", ev => {
+  const fs = ev.target.files ? Array.from(ev.target.files) : [];
+  if (DUAL && fs.length >= 2) dualReadTwo(fs[0], fs[1]);
+  else if (fs[0]) readFile(fs[0]);
+  ev.target.value = "";
+});
 const app = $("app"), hint = $("dropHint");
 ["dragenter", "dragover"].forEach(n => app.addEventListener(n, e => { e.preventDefault(); hint.classList.add("show"); }));
 app.addEventListener("dragleave", e => { if (!e.relatedTarget || !app.contains(e.relatedTarget)) hint.classList.remove("show"); });
 app.addEventListener("drop", e => {
   e.preventDefault(); hint.classList.remove("show");
-  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  const fl = e.dataTransfer && e.dataTransfer.files;
+  if (DUAL && fl && fl.length >= 2) { dualReadTwo(fl[0], fl[1]); return; }
+  const f = fl && fl[0];
   if (f) readFile(f);
 });
 window.addEventListener("keydown", ev => {
@@ -3748,6 +4041,450 @@ function runDemo() {
   }
   redraw();
 }
+
+/* ---------- Dos cabezas: estado por cabeza, línea de tiempo sincronizada, dibujo vertical ---------- */
+const openProgramCore = openProgram;
+const EMPTY_SIM = { blocks: [], cycle: { total_s: 0 } };
+function simOf(h) { return h === active ? sim : (heads[h] && heads[h].sim) || null; }
+function headField(h, k) {
+  if (h === active) return ({ original, originalName, accepted, isPreloadedFile, findings, text: ed.value, autosaveState })[k];
+  return heads[h] ? heads[h][k] : undefined;
+}
+function headColor(h) { return headColors[h] || DEFAULT_HEAD_COLORS[h]; }
+function dualTotal() { return dualSync ? dualSync.total : ((sim && sim.cycle && sim.cycle.total_s) || 0); }
+function headLocalT(h) {
+  if (h === active) return currentT;
+  return dualSync ? syncLocalTime(dualSync, h, globalT) : 0;
+}
+function dualSyncTimes() {
+  if (!dualSync) { globalT = currentT; lastDerivedT = currentT; return; }
+  if (lastDerivedT === null || Math.abs(currentT - lastDerivedT) > 1e-9) globalT = syncGlobalTime(dualSync, active, currentT);
+  globalT = Math.max(0, Math.min(dualSync.total, globalT));
+  currentT = syncLocalTime(dualSync, active, globalT);
+  lastDerivedT = currentT;
+}
+function dualSetGlobal(g) {
+  globalT = Math.max(0, Math.min(dualTotal(), g || 0));
+  currentT = dualSync ? syncLocalTime(dualSync, active, globalT) : globalT;
+  lastDerivedT = currentT;
+}
+function waitCodesNow() { return parseWaitSpec(waitSpec); }
+function waitFindingsFrom(sync, h) {
+  return waitLintIssues(sync, h).map(i => Object.assign({ source: "dos cabezas" }, i));
+}
+function dualWaitFindings(s) {
+  const other = simOf(1 - active) || EMPTY_SIM;
+  const pair = active === 0 ? [s, other] : [other, s];
+  return waitFindingsFrom(syncTimeline(pair[0], pair[1], { waitCodes: waitCodesNow() }), active);
+}
+function dualRefreshInactive() {
+  const o = 1 - active, st = heads[o];
+  if (!st || !st.sim) return;
+  const extra = waitFindingsFrom(dualSync, o);
+  st.findings = (st.findings || []).filter(f => !/^WAIT_/.test(f.code || "")).concat(extra);
+  const byLine = {};
+  extra.forEach(f => { (byLine[f.line] || (byLine[f.line] = [])).push(f); });
+  st.sim.blocks.forEach(b => { b.lint = (b.lint || []).filter(f => !/^WAIT_/.test(f.code || "")).concat(byLine[b.line] || []); });
+}
+function dualResync() {
+  dualSync = syncTimeline(simOf(0) || EMPTY_SIM, simOf(1) || EMPTY_SIM, { waitCodes: waitCodesNow() });
+  dualRefreshInactive();
+  renderSyncInfo();
+  updateHeadBar();
+}
+function captureHead() {
+  return {
+    original, originalName, isPreloadedFile, accepted, text: ed.value,
+    ss: ed.selectionStart, se: ed.selectionEnd, hist, sim, previewSim, origSim, findings, diffInfo,
+    selLine, selBlocks, selNoMove, selSource, selPos, autosaveState,
+    scroll: { x: editorViewScroll.x, y: editorViewScroll.y }
+  };
+}
+function restoreHead(st) {
+  st = st || { original: "", originalName: HEAD_IDS[active] + ".NCD", isPreloadedFile: false, accepted: "", text: "",
+    ss: 0, se: 0, hist: { stack: [], idx: -1 }, sim: null, previewSim: null, origSim: null, findings: [],
+    diffInfo: { status: [], delBefore: [], hunks: [], changed: 0 }, selLine: 0, selBlocks: [], selNoMove: false,
+    selSource: null, selPos: null, autosaveState: "—", scroll: { x: 0, y: 0 } };
+  original = st.original; originalName = st.originalName; isPreloadedFile = st.isPreloadedFile;
+  accepted = st.accepted; ed.value = st.text;
+  try { ed.setSelectionRange(st.ss || 0, st.se || 0); } catch (e) {}
+  hist = st.hist; sim = st.sim; previewSim = st.previewSim; origSim = st.origSim;
+  findings = st.findings || []; diffInfo = st.diffInfo || diffInfo;
+  selLine = st.selLine; selBlocks = st.selBlocks || []; selNoMove = st.selNoMove; selSource = st.selSource; selPos = st.selPos;
+  autosaveState = st.autosaveState || "—";
+  return st;
+}
+function flushHeadTimers() {
+  clearTimeout(histTimer); pushHist();
+  clearTimeout(reparseTimer);
+  clearTimeout(saveTimer);
+  if (original || ed.value) doAutosave();
+}
+function dualRecomputeActive() {
+  if (!original && !accepted && !ed.value) { sim = null; previewSim = null; findings = []; dualResync(); renderDecor(); renderLintList(); updatePendingUI(); buildListing(); return; }
+  const s = computeSimulation(accepted != null ? accepted : ed.value);
+  sim = s; findings = s._findings || [];
+  dualResync();
+  buildListing(); buildLegend(); buildNotes();
+  if (hasPending()) { previewSim = computeSimulation(ed.value); findings = previewSim._findings || []; }
+  else previewSim = null;
+  renderDecor(); renderLintList(); updatePendingUI(); buildLegend();
+  $("fname").textContent = HEAD_LABELS[active] + " · " + (originalName || "programa.NCD");
+  if (selLine) selectLine(selLine, { source: selSource || "editor", silent: true, keepTime: true, skipEnsure: true });
+}
+function switchHead(h, opts) {
+  opts = opts || {};
+  if (!DUAL || (h !== 0 && h !== 1) || h === active) return false;
+  flushHeadTimers();
+  heads[active] = captureHead();
+  active = h;
+  const st = restoreHead(heads[h]);
+  heads[h] = null;
+  curSign = signOf(active);
+  $("restoreBanner").hidden = true;
+  curEdLine = -1;
+  updateUndoButtons();
+  dualRecomputeActive();
+  currentT = dualSync ? syncLocalTime(dualSync, active, globalT) : 0;
+  lastDerivedT = currentT;
+  applyEditorScroll(st.scroll ? st.scroll.x : 0, st.scroll ? st.scroll.y : 0, false);
+  updateHeadBar();
+  updateStatus();
+  if (!opts.silent) { redraw(); if (!opts.quiet) toast("Editando " + HEAD_LABELS[h] + " (" + HEAD_IDS[h] + ")", 1400); }
+  return true;
+}
+function baseStem(name) { return String(name || "programa").replace(/\.[^.\\\/]*$/, "").replace(/_HEAD[12]$/i, ""); }
+function dualLoadPair(t1, n1, t2, n2, preloaded) {
+  playing = false; syncPlayBtn();
+  if (active !== 1) switchHead(1, { silent: true });
+  dualLoading = true;
+  try { openProgramCore(t2, n2 || "HEAD2.NCD", preloaded); } finally { dualLoading = false; }
+  switchHead(0, { silent: true });
+  dualLoading = true;
+  try { openProgramCore(t1, n1 || "HEAD1.NCD", preloaded); } finally { dualLoading = false; }
+  dualResync();
+  dualSetGlobal(0);
+  fitAll();
+  updateHeadBar();
+  redraw();
+}
+function dualLoadOne(h, text, name, preloaded) {
+  if (h !== active) switchHead(h, { silent: true });
+  dualLoading = true;
+  try { openProgramCore(text, name, preloaded); } finally { dualLoading = false; }
+  dualResync(); updateHeadBar(); redraw();
+}
+function dualRemember() {
+  const a = [0, 1].map(h => ({ name: headField(h, "originalName"), text: headField(h, "original"), pre: !!headField(h, "isPreloadedFile") }));
+  if (a[0].pre && a[1].pre) { lsDel(DUAL_LAST_KEY); return; }
+  lsSet(DUAL_LAST_KEY, JSON.stringify({ h1: a[0], h2: a[1], ts: Date.now() }));
+}
+function dualOpen(text, name, preloaded) {
+  const sp = splitHeads(text);
+  if (sp.found) {
+    const stem = baseStem(name);
+    dualLoadPair(sp.head1, stem + "_HEAD1.NCD", sp.head2, stem + "_HEAD2.NCD", preloaded);
+  } else dualLoadOne(active, text, name, preloaded);
+  if (!preloaded) dualRemember();
+}
+function dualReadTwo(f1, f2) {
+  const isTwo = n => /(HEAD|CAB\w*|PATH)\s*[-_ ]?2|_2(\.|$)/i.test(n || "");
+  if (isTwo(f1.name) && !isTwo(f2.name)) { const t = f1; f1 = f2; f2 = t; }
+  Promise.all([f1.text(), f2.text()]).then(([a, b]) => {
+    dualLoadPair(a, f1.name, b, f2.name, false);
+    dualRemember();
+    toast("Cabeza 1: " + f1.name + " · Cabeza 2: " + f2.name, 3200);
+  }).catch(() => toast("No se pudieron leer los dos archivos."));
+}
+function dualLoadDemo() {
+  const demo = PRELOADED && PRELOADED.dualDemo;
+  if (!demo || !demo.text) {
+    toast("Abra el programa de HEAD1 y HEAD2 (dos archivos o uno con (HEAD1)/(HEAD2)).");
+    dualResync(); renderDecor(); updatePendingUI(); updateHeadBar();
+    return false;
+  }
+  const sp = splitHeads(demo.text);
+  dualLoadPair(sp.head1, demo.name1 || "HEAD1_EJEMPLO.NCD", sp.head2, demo.name2 || "HEAD2_EJEMPLO.NCD", true);
+  lsDel(DUAL_LAST_KEY);
+  return true;
+}
+function dualFitAll() {
+  let zmin = Infinity, zmax = -Infinity, rmin = Infinity, rmax = -Infinity;
+  const c = (z, r) => { zmin = Math.min(zmin, z); zmax = Math.max(zmax, z); rmin = Math.min(rmin, r); rmax = Math.max(rmax, r); };
+  [0, 1].forEach(h => {
+    const s = simOf(h); if (!s) return;
+    const sg = signOf(h);
+    if (s.geometry) [1, -1].forEach(gs => { (s.geometry.mandrel || []).forEach(p => c(p[0], gs * p[1] / 2)); (s.geometry.sheet || []).forEach(p => c(p[0], gs * p[1] / 2)); });
+    s.blocks.forEach(b => (b.points || []).forEach(p => c(p[0], sg * p[1] / 2)));
+  });
+  if (!isFinite(zmin)) { view.s = 1; centerOn(200, 0); view.ready = true; return; }
+  fitBox(zmin, zmax, rmin, rmax, 30);
+}
+function drawGridV() {
+  const w = cw(), h = chh();
+  const [zA, rL] = s2w(PAD_L, 0), [zB, rR] = s2w(w, h - PAD_B);
+  const z0 = Math.min(zA, zB), z1 = Math.max(zA, zB);
+  const zMaj = niceStep(90 / view.s), zMin = minorStep(zMaj, view.s);
+  const dMaj = niceStep(180 / view.s), dMin = minorStep(dMaj, view.s / 2);
+  const line = (x0, y0, x1, y1) => { ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); };
+  const zs = (st) => { const a = []; let n = 0; for (let z = Math.floor(z0 / st) * st; z <= z1 + 1e-9 && n < 3000; z += st, n++) a.push(z); return a; };
+  const ds = (st) => { const a = []; let n = 0; for (let d = Math.floor(2 * rL / st) * st; d <= 2 * rR + 1e-9 && n < 3000; d += st, n++) a.push(d); return a; };
+  ctx.save(); ctx.lineWidth = 1;
+  if (zMin) { ctx.strokeStyle = "rgba(42,51,64,.45)"; zs(zMin).forEach(z => { const y = w2sRaw(z, 0)[1]; line(PAD_L, y, w, y); }); }
+  if (dMin) { ctx.strokeStyle = "rgba(42,51,64,.45)"; ds(dMin).forEach(d => { const x = w2sRaw(0, d / 2)[0]; line(x, 0, x, h - PAD_B); }); }
+  ctx.strokeStyle = "rgba(58,70,88,.85)";
+  const zMajL = zs(zMaj), dMajL = ds(dMaj);
+  zMajL.forEach(z => { const y = w2sRaw(z, 0)[1]; line(PAD_L, y, w, y); });
+  dMajL.forEach(d => { const x = w2sRaw(0, d / 2)[0]; line(x, 0, x, h - PAD_B); });
+  ctx.restore();
+  return { zMajL, dMajL, zMaj, dMaj, zMin, dMin };
+}
+function drawAxesV(g) {
+  const w = cw(), h = chh();
+  ctx.save();
+  ctx.fillStyle = "rgba(14,17,22,.94)"; ctx.fillRect(0, 0, PAD_L, h); ctx.fillRect(0, h - PAD_B, w, PAD_B);
+  ctx.strokeStyle = "#3a4558"; ctx.beginPath(); ctx.moveTo(PAD_L + .5, 0); ctx.lineTo(PAD_L + .5, h - PAD_B + .5); ctx.lineTo(w, h - PAD_B + .5); ctx.stroke();
+  ctx.fillStyle = "#a3afc0"; ctx.font = "11px system-ui, sans-serif";
+  const dz = decimals(g.zMaj), dd = decimals(g.dMaj);
+  ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  g.zMajL.forEach(z => { const y = w2sRaw(z, 0)[1]; if (y < 18 || y > h - PAD_B - 6) return;
+    ctx.fillRect(PAD_L - 5, y, 5, 1); ctx.fillText(z.toFixed(dz), PAD_L - 7, y); });
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  g.dMajL.forEach(d => { const x = w2sRaw(0, d / 2)[0]; if (x < PAD_L + 12 || x > w - 14) return;
+    ctx.fillRect(x, h - PAD_B, 1, 5); ctx.fillText(Math.abs(d).toFixed(dd), x, h - PAD_B + 7); });
+  ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.fillStyle = "#c5cdd8"; ctx.font = "600 11px system-ui, sans-serif";
+  ctx.fillText("Z mm", 6, 4);
+  // nombres de las cabezas en su lado
+  const xR = w2sRaw(0, 1)[0] > w2sRaw(0, 0)[0];
+  [0, 1].forEach(hh => {
+    const right = (signOf(hh) > 0) === xR;
+    ctx.fillStyle = headColor(hh); ctx.font = "700 11px system-ui, sans-serif";
+    ctx.textAlign = right ? "right" : "left"; ctx.textBaseline = "bottom";
+    ctx.fillText((right ? "" : "◂ ") + HEAD_LABELS[hh] + (right ? " ▸" : ""), right ? w - 8 : PAD_L + 8, h - PAD_B - 22);
+  });
+  ctx.fillStyle = "#c5cdd8"; ctx.font = "600 11px system-ui, sans-serif";
+  ctx.textAlign = "right"; ctx.textBaseline = "bottom"; ctx.fillText("Ø mm", w - 8, h - 2);
+  const len = niceStep(110 / view.s), px = len * view.s, x1 = w - 16, y = h - PAD_B - 8;
+  ctx.fillStyle = "#c5cdd8"; ctx.fillRect(x1 - px, y, px, 2); ctx.fillRect(x1 - px, y - 4, 1, 6); ctx.fillRect(x1, y - 4, 1, 6);
+  ctx.textAlign = "center"; ctx.textBaseline = "bottom"; ctx.font = "11px system-ui, sans-serif";
+  ctx.fillText(len.toFixed(decimals(len)) + " mm", x1 - px / 2, y - 3);
+  if (hover) {
+    ctx.textAlign = "left"; ctx.textBaseline = "bottom"; ctx.fillStyle = "#93a0b3";
+    ctx.fillText("Cursor  Z " + hover[0].toFixed(2) + "   Ø " + Math.abs(hover[1] * 2).toFixed(2), PAD_L + 8, h - PAD_B - 38);
+  }
+  ctx.restore();
+}
+function drawOtherHead() {
+  const o = 1 - active, s = simOf(o);
+  if (!s || !s.blocks) return;
+  const sv = curSign; curSign = signOf(o);
+  const tl = headLocalT(o), idx = blockIndexAt(tl, s), col = headColor(o);
+  s.blocks.forEach((b, i) => {
+    if (!b.points || b.points.length < 2) return;
+    const rapid = b.g === 0 || b.kind === "g30" || b.kind === "g28";
+    drawPolyline(b.points, col, i === idx ? 2.6 : rapid ? 1 : 1.6, rapid ? [7, 5] : [], i === idx ? 1 : i < idx ? 0.72 : 0.3);
+  });
+  const st = stateAt(tl, s);
+  if (st.x != null && st.z != null) { drawRoller(st.z, st.x, st.tool); drawHeadTag(o, st); }
+  curSign = sv;
+}
+function drawHeadTag(h, st) {
+  if (!st || st.x == null || st.z == null) return;
+  const sv = curSign; curSign = signOf(h);
+  const p = w2s(st.z, st.x / 2), c0 = w2sRaw(st.z, 0);
+  curSign = sv;
+  const wt = dualSync ? syncWaitingAt(dualSync, h, globalT) : null;
+  const fin = dualSync && globalT >= dualSync.ends[h] - 1e-6;
+  const label = HEAD_SHORT[h] + (wt ? "  ⏸ M" + wt.code : fin ? "  ✓" : "");
+  ctx.save();
+  ctx.font = "700 12px system-ui, sans-serif";
+  const tw = ctx.measureText(label).width + 10, th = 18;
+  const outward = (p[0] - c0[0]) >= 0 ? 1 : -1;
+  let x = p[0] + outward * 16, y = p[1] - th - 6;
+  if (outward < 0) x -= tw;
+  x = Math.max(PAD_L + 2, Math.min(cw() - tw - 2, x)); y = Math.max(2, y);
+  ctx.fillStyle = "rgba(14,17,22,.88)"; ctx.strokeStyle = headColor(h); ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.rect(x, y, tw, th); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = wt ? "#f5b942" : headColor(h); ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  ctx.fillText(label, x + 5, y + th / 2 + 0.5);
+  ctx.restore();
+}
+function nearestOtherHeadAt(x, y, opts) {
+  const o = 1 - active, so = simOf(o);
+  if (!so) return null;
+  const sv = sim, sg = curSign;
+  sim = so; curSign = signOf(o);
+  try { return nearestBlockAt(x, y, opts); } finally { sim = sv; curSign = sg; }
+}
+function waitLineOf(h) {
+  if (!dualSync) return 0;
+  const w = syncWaitingAt(dualSync, h, globalT);
+  if (!w) return 0;
+  const hit = (dualSync.waits[h] || []).find(x => x.code === w.code && Math.abs(x.t - w.local) < 1e-9);
+  return hit ? hit.line : 0;
+}
+function headLineInfo(h) {
+  const s = simOf(h);
+  if (!s || !s.blocks.length) return { line: 0, text: "—", waiting: null, fin: false };
+  const tl = headLocalT(h);
+  const wl = waitLineOf(h);
+  let idx = blockIndexAt(tl, s);
+  if (wl) { const k = s.blocks.findIndex(x => x.line === wl); if (k >= 0) idx = k; }
+  const b = s.blocks[idx] || {};
+  const wt = dualSync ? syncWaitingAt(dualSync, h, globalT) : null;
+  const fin = !!(dualSync && globalT >= dualSync.ends[h] - 1e-6);
+  return { line: b.line || 0, n: b.n || null, g: b.kind === "move" ? b.g : null, text: (b.text || "").trim(), waiting: wt, fin: fin, idx: idx, t: tl };
+}
+function updateHeadStrip() {
+  const el = $("headStrip");
+  if (!el) return;
+  el.hidden = false;
+  el.innerHTML = [0, 1].map(h => {
+    const i = headLineInfo(h);
+    const left = i.waiting ? (i.waiting.until - globalT) : 0;
+    const st = i.waiting ? '<span class="wt">⏸ M' + i.waiting.code + " " + left.toFixed(1) + " s</span>"
+      : i.fin ? '<span class="fin">✓ fin</span>' : "";
+    const ln = i.line ? ("L" + i.line + " " + escapeHtml(i.text)) : "—";
+    return '<button type="button" class="hchip' + (h === active ? " on" : "") + '" data-head="' + h + '" style="--hc:' + headColor(h) + '" title="' + escapeHtml(HEAD_LABELS[h] + " (" + HEAD_IDS[h] + ")") + '">' +
+      "<b>" + HEAD_SHORT[h] + "</b>" + st + '<span class="ln">' + ln + "</span></button>";
+  }).join("");
+}
+function updateHeadBar() {
+  if (!DUAL) return;
+  [0, 1].forEach(h => {
+    const btn = $("headBtn" + h); if (!btn) return;
+    btn.style.setProperty("--hc", headColor(h));
+    btn.classList.toggle("on", h === active);
+    btn.setAttribute("aria-selected", h === active ? "true" : "false");
+    const name = headField(h, "originalName") || "—";
+    const pend = h === active ? hasPending() : !!(heads[h] && heads[h].text !== heads[h].accepted);
+    const fl = headField(h, "findings") || [];
+    const e = fl.filter(f => f.level === "error").length;
+    const sub = $("headSub" + h);
+    if (sub) sub.innerHTML = (pend ? '<span class="pend">● </span>' : "") + (e ? '<span style="color:var(--err)">' + e + " err · </span>" : "") + escapeHtml(name);
+  });
+}
+function dualReadoutHtml() {
+  if (!DUAL) return "";
+  const parts = [0, 1].map(h => {
+    const i = headLineInfo(h);
+    const st = i.waiting ? ' <span style="color:#f5b942">⏸ esperando M' + i.waiting.code + "</span>" : i.fin ? ' <span style="color:var(--ok)">✓ fin</span>' : "";
+    return '<span style="color:' + headColor(h) + ';font-weight:650">' + HEAD_SHORT[h] + "</span> L" + (i.line || "—") + st;
+  });
+  return '<div class="span2" style="font-size:12px"><div class="k">Dos cabezas · tiempo global ' + fmtTime(globalT) + " / " + fmtTime(dualTotal()) + "</div>" + parts.join(" · ") + "</div>";
+}
+function renderSyncInfo() {
+  const el = $("syncInfo");
+  if (!el || !dualSync) return;
+  const codes = dualSync.codes;
+  const spec = codes.length > 12 ? ("M" + codes[0] + "–M" + codes[codes.length - 1]) : codes.map(c => "M" + c).join(", ");
+  let h = '<div class="sp">Códigos de espera: <b>' + escapeHtml(spec || "ninguno") + "</b> (Ajustes ⚙ para cambiar)</div>";
+  if (!dualSync.pairs.length && !dualSync.issues.length) h += '<div class="sp">Sin esperas: las dos cabezas corren a la vez desde el inicio.</div>';
+  dualSync.pairs.forEach(p => {
+    h += '<div class="sp">M' + p.code + " · espera " + (p.index + 1) + ": HEAD1 L" + p.lines[0] + " ↔ HEAD2 L" + p.lines[1] + " · " +
+      (p.waiter == null ? "llegan juntas" : HEAD_LABELS[p.waiter] + " espera " + p.wait_s.toFixed(1) + " s") +
+      " · sigue en " + fmtTime(p.release) + "</div>";
+  });
+  dualSync.issues.forEach(it => {
+    h += '<div class="sp err">' + HEAD_IDS[it.head] + " L" + it.line + " M" + it.code + ": " +
+      (it.kind === "order" ? "no coincide con M" + (it.other_code != null ? it.other_code : "—") + " de la otra cabeza" : "sin pareja en la otra cabeza") + "</div>";
+  });
+  h += '<div class="sp">Ciclo: HEAD1 ' + fmtTime(dualSync.ends[0]) + " · HEAD2 " + fmtTime(dualSync.ends[1]) + " · total " + fmtTime(dualSync.total) + "</div>";
+  el.innerHTML = h;
+}
+function loadDualPrefs() {
+  const ui = uiState();
+  const hc = ui.headColors || {};
+  headColors = [normHex(hc[0] || hc["0"]) || DEFAULT_HEAD_COLORS[0], normHex(hc[1] || hc["1"]) || DEFAULT_HEAD_COLORS[1]];
+  waitSpec = (typeof ui.waitSpec === "string" && ui.waitSpec.trim()) ? ui.waitSpec : DEFAULT_WAIT_SPEC;
+  dualSwap = !!ui.dualSwap; dualZDown = !!ui.dualZDown;
+  if ($("colH1")) $("colH1").value = headColors[0];
+  if ($("colH2")) $("colH2").value = headColors[1];
+  if ($("waitSpec")) $("waitSpec").value = waitSpec;
+  if ($("dualSwap")) $("dualSwap").checked = dualSwap;
+  if ($("dualZDown")) $("dualZDown").checked = dualZDown;
+  curSign = signOf(active);
+}
+function setHeadColor(h, hex) {
+  const v = normHex(hex);
+  if (v && (h === 0 || h === 1)) headColors[h] = v;
+  saveUi({ headColors: { 0: headColors[0], 1: headColors[1] } });
+  updateHeadBar(); redraw();
+  return headColor(h);
+}
+function setWaitSpec(spec) {
+  waitSpec = String(spec == null ? DEFAULT_WAIT_SPEC : spec).trim() || DEFAULT_WAIT_SPEC;
+  saveUi({ waitSpec: waitSpec });
+  if ($("waitSpec") && $("waitSpec").value !== waitSpec) $("waitSpec").value = waitSpec;
+  dualRecomputeActive();
+  redraw();
+  return waitCodesNow();
+}
+function setDualView(opts) {
+  if ("swap" in opts) dualSwap = !!opts.swap;
+  if ("zDown" in opts) dualZDown = !!opts.zDown;
+  saveUi({ dualSwap: dualSwap, dualZDown: dualZDown });
+  curSign = signOf(active);
+  fitAll(); redraw();
+}
+function saveBothHeads(opts) {
+  opts = opts || {};
+  const t0 = headField(0, "accepted") || headField(0, "text") || "";
+  const t1 = headField(1, "accepted") || headField(1, "text") || "";
+  const r = formatForSave(joinHeads(t0, t1));
+  const name = baseStem(headField(0, "originalName") || "programa") + "_2CAB_edit.NCD";
+  if (!opts.noDownload) downloadBlob(new Blob([r.text], { type: "text/plain;charset=utf-8" }), name);
+  if (!opts.silent) toast("Guardado " + name + " (CRLF, " + r.lines + " líneas, HEAD1 + HEAD2)", 4000);
+  return { name: name, text: r.text };
+}
+function setupModeUi() {
+  const lnk = $("lnkMode"), lp = $("lnkModePrefs");
+  if (DUAL) {
+    document.documentElement.classList.add("dual");
+    const h1 = document.querySelector("header h1");
+    if (h1) h1.innerHTML = '<span class="hdr-full">Simulador de dos cabezas </span><span>Variforma 2C</span>';
+    if (lnk) { lnk.hidden = false; lnk.textContent = "1 cabeza"; lnk.href = "./"; lnk.title = "Simulador de una cabeza"; }
+    if (lp) { lp.hidden = false; lp.textContent = "← Simulador de 1 cabeza"; lp.href = "./"; }
+    ["headBar", "headStrip", "prefDual", "dataSyncWrap", "saveBoth"].forEach(id => { if ($(id)) $(id).hidden = false; });
+    const dr = $("dataReadout"), sw = $("dataSyncWrap");
+    if (dr && sw && dr.parentNode) dr.parentNode.insertBefore(sw, dr.nextSibling);
+    if ($("fileIn")) $("fileIn").multiple = true;
+    if ($("btnOpen")) $("btnOpen").title = "Un archivo va a la cabeza activa; dos archivos (o uno con (HEAD1)/(HEAD2)) cargan las dos";
+    if ($("zFlange")) $("zFlange").title = "Zoom a la pestaña (T0205) de la cabeza activa";
+  } else if (window.__PWA_BUILD__) {
+    if (lnk) lnk.hidden = false;
+    if (lp) lp.hidden = false;
+    if ($("dataModeWrap")) $("dataModeWrap").hidden = false;
+  }
+}
+function dualInit() {
+  setupModeUi();
+  loadDualPrefs();
+  let last = null;
+  try { last = JSON.parse(lsGet(DUAL_LAST_KEY) || "null"); } catch (e) { last = null; }
+  if (last && last.h1 && last.h2 && typeof last.h1.text === "string" && typeof last.h2.text === "string") {
+    dualLoadPair(last.h1.text, last.h1.name, last.h2.text, last.h2.name, false);
+  } else dualLoadDemo();
+  updateHeadBar();
+}
+if (DUAL) {
+  document.querySelectorAll("#headBar .head-btn").forEach(b => b.addEventListener("click", () => switchHead(parseInt(b.dataset.head, 10))));
+  if ($("headStrip")) $("headStrip").addEventListener("click", ev => {
+    const b = ev.target.closest(".hchip"); if (!b) return;
+    const h = parseInt(b.dataset.head, 10);
+    if (h !== active) switchHead(h);
+  });
+  [["colH1", 0], ["colH2", 1]].forEach(([id, h]) => {
+    const el = $(id); if (!el) return;
+    const apply = () => setHeadColor(h, el.value);
+    el.addEventListener("input", apply); el.addEventListener("change", apply);
+  });
+  if ($("waitSpec")) $("waitSpec").addEventListener("change", () => setWaitSpec($("waitSpec").value));
+  if ($("dualSwap")) $("dualSwap").addEventListener("change", () => setDualView({ swap: $("dualSwap").checked }));
+  if ($("dualZDown")) $("dualZDown").addEventListener("change", () => setDualView({ zDown: $("dualZDown").checked }));
+  if ($("saveBoth")) $("saveBoth").addEventListener("click", () => { saveBothHeads(); closeSaveSheet(); });
+  if ($("btnDualDemo")) $("btnDualDemo").addEventListener("click", () => { if (dualLoadDemo()) toast("Ejemplo de dos cabezas cargado (no apto para máquina)."); });
+} else setupModeUi();
 
 /* ---------- Arranque ---------- */
 (function init() {
@@ -3808,13 +4545,46 @@ function runDemo() {
     onVisualViewport();
   }
   resize();
-  if (PRELOADED && PRELOADED.text != null) openProgram(PRELOADED.text, PRELOADED.filename, true);
+  if (DUAL) dualInit();
+  else if (PRELOADED && PRELOADED.text != null) openProgram(PRELOADED.text, PRELOADED.filename, true);
   else { original = ""; accepted = ""; ed.value = ""; previewSim = null; resetHist(); renderDecor(); updatePendingUI(); toast("Abra o arrastre un archivo .NCD"); }
   runDemo();
   requestAnimationFrame(tick);
 })();
 
 window.__vf = {
+  dual: {
+    on: DUAL,
+    active: function () { return active; },
+    switchHead: switchHead,
+    sync: function () { return dualSync; },
+    globalT: function () { return globalT; },
+    total: function () { return dualTotal(); },
+    setGlobal: function (g) { dualSetGlobal(g); redraw(); return { globalT: globalT, local: currentT }; },
+    headInfo: headLineInfo,
+    localT: headLocalT,
+    simOf: simOf,
+    headField: headField,
+    waitSpec: function () { return waitSpec; },
+    setWaitSpec: setWaitSpec,
+    headColors: function () { return headColors.slice(); },
+    setHeadColor: setHeadColor,
+    setDualView: setDualView,
+    signOf: signOf,
+    saveBothHeads: saveBothHeads,
+    loadDemo: dualLoadDemo,
+    loadPair: dualLoadPair,
+    openText: function (text, name) { return openProgram(text, name, false); },
+    headPoint: function (h) {
+      const s = simOf(h); if (!s) return null;
+      const b = s.blocks.find(x => x.kind === "move" && x.g && x.g !== 0 && x.points && x.points.length > 2);
+      if (!b) return null;
+      const p = b.points[Math.floor(b.points.length / 2)];
+      const sv = curSign; curSign = signOf(h); const sc = w2s(p[0], p[1] / 2); curSign = sv;
+      const r = $("view").getBoundingClientRect();
+      return { line: b.line, sx: sc[0], sy: sc[1], vx: r.left + sc[0], vy: r.top + sc[1] };
+    }
+  },
   isMobileLayout: function () { return isMobileLayout(); },
   mobTab: function () { return $("app").dataset.mobTab || "plot"; },
   setMobTab: setMobTab,
@@ -3848,7 +4618,7 @@ window.__vf = {
   editorCursorLine: editorCursorLine,
   getView: function () { return { cz: view.cz, cr: view.cr, s: view.s, ready: view.ready, w: cw(), h: chh() }; },
   currentT: function () { return currentT; },
-  setT: function (t) { currentT = t; redraw(); },
+  setT: function (t) { currentT = t; lastDerivedT = null; redraw(); },
   fitAll: function () { fitAll(); draw(); },
   pick: pick,
   nearestBlockAt: nearestBlockAt,
