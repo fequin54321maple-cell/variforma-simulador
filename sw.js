@@ -1,6 +1,6 @@
 /* Service worker del Simulador Variforma: caché cache-first y share_target. */
-/* 98b6fd5ca457 y ["./", "./index.html", "./pwa.js", "./manifest.webmanifest", "./version.json", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-192-maskable.png", "./icons/icon-512-maskable.png", "./icons/apple-touch-icon.png", "./examples/O9000_copa_demo_v2_4_1.NCD", "./dos_cabezas.html", "./examples/O0010_dos_cabezas_EJEMPLO.NCD"] los rellena pwa_build.py */
-const VERSION = "98b6fd5ca457";
+/* 3955d6368ea1 y ["./", "./index.html", "./pwa.js", "./manifest.webmanifest", "./version.json", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-192-maskable.png", "./icons/icon-512-maskable.png", "./icons/apple-touch-icon.png", "./examples/O9000_copa_demo_v2_4_1.NCD", "./dos_cabezas.html", "./examples/O0010_dos_cabezas_EJEMPLO.NCD"] los rellena pwa_build.py */
+const VERSION = "3955d6368ea1";
 const CACHE = "variforma-sim-" + VERSION;
 const PRECACHE = ["./", "./index.html", "./pwa.js", "./manifest.webmanifest", "./version.json", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-192-maskable.png", "./icons/icon-512-maskable.png", "./icons/apple-touch-icon.png", "./examples/O9000_copa_demo_v2_4_1.NCD", "./dos_cabezas.html", "./examples/O0010_dos_cabezas_EJEMPLO.NCD"];
 const SHARE_INBOX = "variforma-share-inbox";
