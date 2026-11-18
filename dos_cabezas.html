@@ -168,6 +168,13 @@
   .app.has-pending .tbtn.pending-tool { display: inline-flex; }
   #savePendingNote { color: #f5b942; font-size: 13px; margin: 0 0 10px; }
   .hdr-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .hdr-actions #btnPrefs { order: 1; }
+  .hdr-actions .dropbar { order: 2; }
+  .hdr-actions #btnLibrary, .hdr-actions #btnInstall { order: 3; }
+  .hdr-actions #btnOpen, .hdr-actions #fileIn { order: 4; }
+  .hdr-actions #btnSave { order: 5; }
+  .hdr-actions #btnMore { order: 6; }
+  .hdr-actions #hdrMoreMenu .chk, .hdr-actions #btnPanel, .hdr-actions #lnkMode { order: 7; }
   .btn { background: var(--bg3); border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; }
   .btn:hover { border-color: var(--accent); }
   .btn.primary { background: #1a4a7a; border-color: #2b6ea8; }
@@ -797,6 +804,7 @@
   /* ---- Dos cabezas ---- */
   .mode-link { text-decoration: none; color: inherit; white-space: nowrap; }
   html.layout-mobile .mode-link { display: none; }
+  html.layout-mobile .hdr-more-menu.open .mode-link:not([hidden]) { display: flex; width: 100%; }
   .head-bar { display: flex; flex-direction: column; gap: 4px; padding: 5px 6px; border-bottom: 1px solid var(--line); flex: none; background: var(--bg2); }
   .head-bar[hidden] { display: none; }
   .head-seg { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--bg3); }
@@ -851,6 +859,331 @@
   #syncInfo { font-size: 12px; line-height: 1.5; }
   #syncInfo .sp { padding: 3px 0; border-bottom: 1px solid var(--line); }
   #syncInfo .sp.err { color: var(--err); }
+
+  /* ---- Ajuste móvil compacto (cabecera, herramientas, hojas, apaisado) ---- */
+  .hdr-more-btn { display: none; }
+  .hdr-more-menu { display: contents; }
+  .lbl-narrow { display: none; }
+  .stage-chrome { display: contents; }
+  .prec-exit {
+    display: none; position: absolute; top: 48px; right: 8px; z-index: 6;
+    align-items: center; gap: 6px; min-height: 36px; padding: 4px 10px;
+    background: rgba(26,74,122,.94); border: 1px solid #2b6ea8; border-radius: 99px;
+    color: #e8edf4; font-size: 12.5px; font-weight: 650; box-shadow: 0 2px 10px rgba(0,0,0,.35);
+    touch-action: manipulation;
+  }
+  .prec-exit.show { display: inline-flex; }
+  .sel-dock { display: contents; }
+  .sel-head, .sel-more { display: none; }
+  .tbtn.on { background: #1a4a7a; border-color: #5ec0ff; box-shadow: 0 0 0 2px rgba(94,192,255,.45); color: #fff; }
+  #prefsSheet .sheet {
+    max-height: min(86svh, calc(var(--app-h, 100dvh) - var(--sat)));
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding-bottom: calc(16px + var(--sab));
+  }
+
+  html.layout-mobile header {
+    overflow: visible;
+    position: relative;
+  }
+  html.layout-mobile .hdr-actions {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+  html.layout-mobile .lbl-wide { display: none; }
+  html.layout-mobile .lbl-narrow { display: inline; }
+  html.layout-mobile .hdr-more-btn {
+    display: inline-flex; flex: none; min-width: var(--ui-tap); min-height: var(--ui-tap);
+    font-size: 22px; line-height: 1; font-weight: 700;
+  }
+  html.layout-mobile .hdr-more-menu {
+    display: none;
+    position: fixed;
+    top: calc(var(--sat) + var(--ui-tap) + 4px);
+    right: max(8px, var(--sar));
+    left: auto;
+    width: min(280px, calc(100vw - 16px - var(--sal) - var(--sar)));
+    max-height: min(70svh, calc(var(--app-h) - var(--sat) - var(--sab) - 56px));
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    z-index: 50;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    background: var(--bg2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.45);
+  }
+  html.layout-mobile .hdr-more-menu.open { display: flex; }
+  html.layout-mobile header.more-open,
+  html.layout-mobile header:has(.hdr-more-menu.open) { z-index: 60; }
+  html.layout-mobile .hdr-more-menu .btn,
+  html.layout-mobile .hdr-more-menu label.btn,
+  html.layout-mobile .hdr-more-menu .chk {
+    width: 100%; justify-content: flex-start; margin: 0; flex: none;
+    min-height: var(--ui-tap); white-space: nowrap;
+  }
+  html.layout-mobile .hdr-more-menu.open .chk,
+  html.layout-mobile .hdr-more-menu.open #btnPanel,
+  html.layout-mobile .hdr-more-menu.open #btnLibrary,
+  html.layout-mobile .hdr-more-menu.open #btnInstall:not([hidden]) {
+    display: flex;
+    width: 100%;
+  }
+  html.layout-mobile .fname { max-width: 22vw; flex: 0 1 auto; }
+  html.layout-mobile header h1 { flex: none; }
+
+  html.layout-mobile .stage-chrome {
+    display: flex;
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 5;
+    height: var(--ui-tap);
+    min-height: var(--ui-tap);
+    max-height: var(--ui-tap);
+    align-items: stretch;
+    gap: 0;
+    background: rgba(16,20,28,.94);
+    border-bottom: 1px solid var(--line);
+    padding-left: max(4px, var(--sal));
+    padding-right: max(4px, var(--sar));
+    pointer-events: auto;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  html.layout-mobile .ro-strip {
+    position: relative;
+    top: auto; left: auto; right: auto;
+    flex: 1 1 46%;
+    width: auto;
+    max-width: none;
+    min-width: 0;
+    height: 100%;
+    min-height: 0;
+    z-index: auto;
+    background: transparent;
+    border: 0;
+    justify-content: flex-start;
+    gap: 5px;
+    padding: 0 6px;
+    font-size: 11.5px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  html.layout-mobile .ro-strip::-webkit-scrollbar { display: none; }
+  html.layout-mobile .ro-strip i { font-size: 10px; }
+  html.layout-mobile .ro-strip b { font-size: 11.5px; font-weight: 650; }
+  html.layout-mobile .tools {
+    position: relative;
+    top: auto; right: auto; left: auto;
+    flex: 0 1 auto;
+    max-width: 54%;
+    width: auto;
+    height: 100%;
+    max-height: none;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 4px;
+    background: transparent;
+    padding: 0 14px 0 4px;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    scrollbar-width: thin;
+    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 16px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 16px), transparent 100%);
+  }
+  html.layout-mobile .tbtn {
+    min-width: var(--ui-tap); min-height: calc(var(--ui-tap) - 4px);
+    padding: 4px 8px; font-size: 14px;
+  }
+  html.layout-mobile .prec-exit {
+    top: calc(var(--ui-tap) + 6px);
+    right: max(8px, var(--sar));
+    min-height: 36px;
+  }
+  html.layout-mobile.dual .prec-exit { top: calc(var(--ui-tap) + 42px); }
+
+  html.layout-mobile .sel-dock {
+    display: none;
+    position: absolute;
+    left: max(6px, var(--sal));
+    right: max(6px, var(--sar));
+    bottom: 6px;
+    z-index: 6;
+    flex-direction: column;
+    gap: 0;
+    max-height: 25%;
+    max-width: calc(100% - 12px);
+    background: rgba(16,20,28,.96);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,.4);
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  html.layout-mobile .sel-dock.show { display: flex; }
+  html.layout-mobile .sel-head {
+    display: flex; align-items: center; gap: 4px;
+    min-height: 36px; padding: 2px 4px 2px 10px; flex: none;
+  }
+  html.layout-mobile .sel-summary {
+    flex: 1 1 auto; min-width: 0;
+    font-size: 12px; font-variant-numeric: tabular-nums;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  html.layout-mobile .sel-ico {
+    flex: none; width: 36px; height: 36px; min-width: 36px; min-height: 36px;
+    border: 0; background: transparent; color: var(--text);
+    font-size: 16px; border-radius: 8px; touch-action: manipulation;
+  }
+  html.layout-mobile .sel-ico[aria-expanded="true"] { color: var(--accent); }
+  html.layout-mobile .sel-more {
+    display: none; flex-direction: column; gap: 0;
+    border-top: 1px solid var(--line);
+    overflow: auto; min-height: 0;
+    -webkit-overflow-scrolling: touch;
+  }
+  html.layout-mobile .sel-dock.open .sel-more { display: flex; }
+  html.layout-mobile .pick-info, html.layout-mobile .cursor-info {
+    position: static; left: auto; right: auto; top: auto; bottom: auto;
+    display: flex; max-width: none; width: 100%;
+    background: transparent; border: 0; box-shadow: none;
+    border-radius: 0; padding: 4px 8px 8px; margin: 0;
+    font-size: 12px;
+  }
+  html.layout-mobile .pick-info:not(.show), html.layout-mobile .cursor-info:not(.show),
+  html.layout-mobile .pick-info[hidden], html.layout-mobile .cursor-info[hidden] { display: none !important; }
+  html.layout-mobile .pick-actions { width: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
+  html.layout-mobile .pick-info #btnGoCode, html.layout-mobile .pick-info #btnInsertMid,
+  html.layout-mobile .cursor-info #btnCopyXZ, html.layout-mobile .cursor-info #btnInsertG01 {
+    flex: 1 1 auto; min-height: 40px; min-width: 44px; padding: 6px 8px; font-size: 12.5px;
+  }
+  html.layout-mobile .pick-info #pickLineText, html.layout-mobile .cursor-info #cursorText { display: none; }
+  html.layout-mobile .app.mob-editor .sel-dock { display: none !important; }
+
+  html.layout-mobile .edbar {
+    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 14px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 14px), transparent 100%);
+    touch-action: pan-x;
+  }
+  html.layout-mobile .load-row {
+    overflow-x: auto; overflow-y: hidden; flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch; touch-action: pan-x;
+    mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 12px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 12px), transparent 100%);
+  }
+  html.layout-mobile .sheet-back,
+  #prefsSheet.show,
+  .pwa-sheet-back.show {
+    overflow: hidden;
+    padding-left: var(--sal);
+    padding-right: var(--sar);
+  }
+  html.layout-mobile .sheet,
+  #prefsSheet .sheet,
+  .pwa-sheet {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  html.layout-mobile .app.immersive {
+    grid-template-areas: "stage";
+    grid-template-rows: minmax(0, 1fr);
+  }
+  html.layout-mobile .app.immersive header,
+  html.layout-mobile .app.immersive .controls,
+  html.layout-mobile .app.immersive .mob-tabs,
+  html.layout-mobile .app.immersive .code-split,
+  html.layout-mobile .app.immersive .pending-bar { display: none !important; }
+  html.layout-mobile .app.immersive .stage { grid-area: stage; }
+  html.layout-mobile .z-full-on { border-color: #5ec0ff; }
+
+  html.layout-mobile .mob-tab { position: relative; }
+  html.layout-mobile .mob-tab::before {
+    display: none; font-size: 16px; line-height: 1;
+  }
+  html.layout-mobile .mob-tab[data-mob="plot"]::before { content: "▣"; }
+  html.layout-mobile .mob-tab[data-mob="editor"]::before { content: "</>"; }
+  html.layout-mobile .mob-tab[data-mob="lint"]::before { content: "!"; }
+  html.layout-mobile .mob-tab[data-mob="data"]::before { content: "☰"; }
+
+  @media (orientation: landscape) {
+    html.layout-mobile header { padding-top: max(2px, var(--sat)); padding-bottom: 2px; }
+    html.layout-mobile .fname { max-width: 18vw; }
+    html.layout-mobile .controls {
+      grid-template-columns: 40px 40px 40px 1fr auto;
+      grid-template-rows: 40px;
+      gap: 4px 6px;
+      padding: 2px 8px;
+      padding-left: max(8px, var(--sal));
+      padding-right: max(8px, var(--sar));
+    }
+    html.layout-mobile .controls .icon-btn { width: 40px; height: 40px; min-width: 40px; min-height: 40px; }
+    html.layout-mobile #timeline { grid-column: 4; grid-row: 1; height: 28px; }
+    html.layout-mobile .time { display: none; }
+    html.layout-mobile .controls .chk-speed {
+      grid-column: 5; grid-row: 1; justify-self: end; font-size: 12px;
+    }
+    html.layout-mobile select#speed { min-height: 36px; padding: 2px 6px; }
+    html.layout-mobile .mob-tab {
+      min-height: 40px; padding: 4px 2px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 1px; font-size: 0;
+    }
+    html.layout-mobile .mob-tab::before { display: block; font-size: 16px; color: inherit; }
+    html.layout-mobile .mob-tab .cnt { font-size: 10px; }
+    html.layout-mobile .sel-dock {
+      left: auto;
+      right: max(6px, var(--sar));
+      bottom: 6px;
+      width: min(340px, 46vw);
+      max-width: 46vw;
+      max-height: 32%;
+    }
+    html.layout-mobile .ro-strip { font-size: 11px; }
+    #prefsSheet.show, html.layout-mobile .sheet-back.show, .pwa-sheet-back.show {
+      align-items: stretch; justify-content: flex-end;
+    }
+    #prefsSheet .sheet, html.layout-mobile .sheet-back .sheet, .pwa-sheet {
+      width: min(400px, 86vw);
+      max-width: 86vw;
+      height: 100%;
+      max-height: 100%;
+      border-radius: 0;
+      border-left: 1px solid var(--line);
+      border-top: 0;
+    }
+  }
+  @media (orientation: landscape) and (max-height: 430px) {
+    html.layout-mobile .stage-chrome, html.layout-mobile .ro-strip, html.layout-mobile .tools {
+      height: 36px; min-height: 36px; max-height: 36px;
+    }
+    html.layout-mobile .tbtn { min-width: 36px; min-height: 32px; padding: 2px 6px; }
+    html.layout-mobile .prec-exit { top: 40px; min-height: 32px; }
+    html.layout-mobile.dual .prec-exit { top: 72px; }
+    html.layout-mobile .mob-tab { min-height: 36px; }
+  }
+  @media (max-width: 400px) {
+    html.layout-mobile .ro-strip { font-size: 10.5px; gap: 4px; }
+    html.layout-mobile .ro-strip b { font-size: 10.5px; }
+    html.layout-mobile .tools { max-width: 50%; }
+    html.layout-mobile .fname { display: none; }
+    html.layout-mobile header { gap: 4px; }
+    html.layout-mobile .hdr-actions { gap: 4px; }
+  }
+
 </style>
 </head>
 <body>
@@ -863,13 +1196,16 @@
     <div class="hdr-actions">
       <button class="btn icon-btn" id="btnPrefs" type="button" title="Tamaño, disposición y colores" aria-label="Ajustes de pantalla">⚙</button>
       <span class="dropbar">Arrastre un .NCD aquí o</span>
-      <label class="btn primary" id="btnOpen" for="fileIn">Abrir archivo</label>
+      <label class="btn primary" id="btnOpen" for="fileIn">📂 <span class="lbl-wide">Abrir archivo</span><span class="lbl-narrow">Abrir</span></label>
       <input type="file" id="fileIn" accept=".NCD,.ncd,.nc,.txt,text/plain,application/octet-stream" hidden>
-      <button class="btn" id="btnSave" type="button" title="Descarga con CRLF, F sin decimales y sufijo _edit">Guardar .NCD</button>
+      <button class="btn" id="btnSave" type="button" title="Descarga con CRLF, F sin decimales y sufijo _edit">💾 <span class="lbl-wide">Guardar .NCD</span><span class="lbl-narrow">Guardar</span></button>
+      <button class="btn icon-btn hdr-more-btn" id="btnMore" type="button" title="Más acciones" aria-label="Más acciones" aria-haspopup="true" aria-expanded="false">⋯</button>
+      <div class="hdr-more-menu" id="hdrMoreMenu" role="menu" aria-label="Más acciones">
       <label class="chk" title="Apagado (por defecto): se ejecutan las líneas con «/» (p. ej. /M9 /M10 del spray). Encendido: se saltan."><input type="checkbox" id="skipBD" autocomplete="off"> Omitir block delete (/)</label>
       <label class="chk"><input type="checkbox" id="showDisc" checked> Disco del rodillo</label>
       <button class="btn" id="btnPanel" type="button" title="Mostrar u ocultar el panel (editor, hallazgos)">Ocultar panel ▸</button>
       <a class="btn mode-link" id="lnkMode" href="dos_cabezas.html" hidden title="Simulador de dos cabezas (HEAD1 / HEAD2)">2 cabezas</a>
+      </div>
     </div>
   </header>
   <div class="main" id="main">
@@ -878,6 +1214,13 @@
         <canvas id="view"></canvas>
         <div class="plot-legend" id="plotLegend" aria-label="Leyenda G00 G01 G02 G03"></div>
         <div class="head-strip" id="headStrip" hidden aria-label="Línea actual de cada cabeza"></div>
+        <div class="sel-dock" id="selDock">
+          <div class="sel-head">
+            <div class="sel-summary" id="selSummary"></div>
+            <button type="button" class="sel-ico" id="selExpand" aria-expanded="false" aria-label="Mostrar acciones" title="Acciones">▾</button>
+            <button type="button" class="sel-ico" id="selClose" aria-label="Cerrar" title="Cerrar">✕</button>
+          </div>
+          <div class="sel-more" id="selMore">
         <div class="pick-info" id="pickInfo" hidden>
           <div id="pickLineText"></div>
           <div id="pickMidText"></div>
@@ -893,17 +1236,15 @@
             <button class="btn primary" type="button" id="btnInsertG01">➕ Insertar G01 aquí</button>
           </div>
         </div>
+          </div>
+        </div>
+        <div class="stage-chrome" id="stageChrome">
         <div class="ro-strip" id="roStrip" title="Toque para ver más datos">
           <span><i>X</i><b id="rsX">—</b></span>
           <span><i>Z</i><b id="rsZ">—</b></span>
           <span><i>F</i><b id="rsF">—</b></span>
           <span><i>S</i><b id="rsS">—</b></span>
           <span><i>T</i><b id="rsT">—</b></span>
-        </div>
-        <div class="code-now" id="rsEv" hidden></div>
-        <div class="readout-box" id="readoutBox">
-          <div class="ro-head" id="roHead">Lectura ▾</div>
-          <div class="readout" id="readout"></div>
         </div>
         <div class="tools">
           <button class="tbtn pending-tool" id="btnAcceptPlot" type="button" hidden title="Aceptar edición" aria-label="Aceptar">✓</button>
@@ -917,8 +1258,15 @@
           <button class="tbtn" id="zRoller" type="button" title="Zoom al rodillo activo">Rodillo</button>
           <button class="tbtn" id="zFlange" type="button" title="Zoom a la pestaña (T0205)">Pestaña</button>
           <button class="tbtn" id="zFollow" type="button" title="Seguir el rodillo durante la animación">Seguir</button>
-          <button class="tbtn" id="zFull" type="button" title="Pantalla completa (tecla F)"><span class="lbl-d">Pantalla completa</span><span class="lbl-m">Plena</span></button>
+          <button class="tbtn" id="zFull" type="button" title="Pantalla completa (tecla F)"><span class="lbl-d">Pantalla completa</span><span class="lbl-m">⛶</span></button>
         </div>
+        </div>
+        <div class="code-now" id="rsEv" hidden></div>
+        <div class="readout-box" id="readoutBox">
+          <div class="ro-head" id="roHead">Lectura ▾</div>
+          <div class="readout" id="readout"></div>
+        </div>
+        <button type="button" class="prec-exit" id="precExit" hidden>✕ salir de Precisión</button>
         <div class="overlay-hint" id="dropHint">Suelte el archivo .NCD para simularlo</div>
       </div>
       <div class="controls" id="controls">
@@ -3819,7 +4167,8 @@ function schedulePlotTap(x, y, pointerType, prec) {
 function handlePlotTap(x, y, prec) {
   const hit = nearestBlockAt(x, y) || (DUAL && nearestOtherHeadAt(x, y));
   if (hit) { pick(x, y); return; }
-  if (prec || precMode) { setPrecFromPointer(x, y, prec ? "touch" : "mouse"); updateCursorInfo(); draw(); }
+  if (prec || precMode) { setPrecFromPointer(x, y, prec ? "touch" : "mouse"); updateCursorInfo(); draw(); return; }
+  dismissSelDock();
 }
 canvas.addEventListener("pointerup", finishPointer);
 canvas.addEventListener("pointercancel", finishPointer);
@@ -3910,6 +4259,8 @@ function setPrecMode(on, opts) {
   const btn = $("zPrec");
   if (btn) btn.classList.toggle("on", precMode);
   canvas.classList.toggle("prec", precMode);
+  const ex = $("precExit");
+  if (ex) { ex.hidden = !precMode; ex.classList.toggle("show", precMode); }
   if (precMode && boxTool) setBoxTool(false);
   if (!precMode) { /* keep last cursor so Julio can still insert */ }
   saveUi({ precMode: precMode });
@@ -3936,6 +4287,7 @@ function updateCursorInfo() {
   if (!show || !precCursor) {
     el.classList.remove("show");
     el.hidden = true;
+    syncSelDock();
     return;
   }
   const c = precCursor;
@@ -3945,6 +4297,7 @@ function updateCursorInfo() {
   if ($("cursorText")) $("cursorText").textContent = txt;
   el.hidden = false;
   el.classList.add("show");
+  syncSelDock();
 }
 function drawPrecisionOverlay() {
   if (!precCursor || precCursor.z == null || precCursor.x == null) return;
@@ -4033,6 +4386,157 @@ function insertMidpoint(opts) {
   return { ok: true, line1: split.line1, line2: split.line2, mid: mid, line: b.line };
 }
 
+
+
+let selDockUserClosed = false, selDockOpen = false;
+function selDockVisible() {
+  const dock = $("selDock");
+  return !!(dock && dock.classList.contains("show"));
+}
+function syncSelDock() {
+  const dock = $("selDock");
+  if (!dock) return;
+  const pick = $("pickInfo");
+  const cur = $("cursorInfo");
+  const hasPick = !!(pick && !pick.hidden && pick.classList.contains("show"));
+  const hasCur = !!(cur && !cur.hidden && cur.classList.contains("show"));
+  const show = (hasPick || hasCur) && !selDockUserClosed && !hidePlotOverlays();
+  dock.classList.toggle("show", show);
+  dock.classList.toggle("open", show && selDockOpen);
+  const exp = $("selExpand");
+  if (exp) exp.setAttribute("aria-expanded", show && selDockOpen ? "true" : "false");
+  const bits = [];
+  if (hasCur && $("cursorText") && $("cursorText").textContent) bits.push($("cursorText").textContent.replace(/^Cursor\s+/, "Cursor "));
+  if (hasPick) {
+    const a = ($("pickLineText") && $("pickLineText").textContent) || "";
+    const b = ($("pickMidText") && !$("pickMidText").hidden && $("pickMidText").textContent) || "";
+    if (a) bits.push(a);
+    if (b) bits.push(b);
+  }
+  if ($("selSummary")) $("selSummary").textContent = bits.join(" · ") || "Selección";
+}
+function dismissSelDock() {
+  selDockUserClosed = true;
+  selDockOpen = false;
+  const dock = $("selDock");
+  if (dock) { dock.classList.remove("show", "open"); }
+}
+function reopenSelDock() { selDockUserClosed = false; syncSelDock(); }
+function toggleSelMore() {
+  selDockOpen = !selDockOpen;
+  selDockUserClosed = false;
+  syncSelDock();
+}
+
+function setMoreMenu(on) {
+  const menu = $("hdrMoreMenu");
+  const btn = $("btnMore");
+  if (!menu || !btn) return;
+  const show = !!on && isMobileLayout();
+  menu.classList.toggle("open", show);
+  btn.setAttribute("aria-expanded", show ? "true" : "false");
+  const hdr = document.querySelector("header");
+  if (hdr) hdr.classList.toggle("more-open", show);
+}
+function toggleMoreMenu() { setMoreMenu(!($("hdrMoreMenu") && $("hdrMoreMenu").classList.contains("open"))); }
+
+function elementReachable(el, vw, vh) {
+  if (!el || el.hidden) return { ok: true, reason: "hidden" };
+  const cs = getComputedStyle(el);
+  if (cs.display === "none" || cs.visibility === "hidden" || Number(cs.opacity) === 0) return { ok: true, reason: "css-hidden" };
+  const r = el.getBoundingClientRect();
+  if (r.width < 1 || r.height < 1) return { ok: true, reason: "zero" };
+  const inView = r.left >= -2 && r.right <= vw + 2 && r.top >= -2 && r.bottom <= vh + 2;
+  if (inView) return { ok: true, reason: "in-view", box: { left: r.left, right: r.right, top: r.top, bottom: r.bottom, w: r.width, h: r.height } };
+  let node = el.parentElement;
+  while (node && node !== document.body) {
+    const st = getComputedStyle(node);
+    const ox = st.overflowX, oy = st.overflowY;
+    const scrollableX = (ox === "auto" || ox === "scroll") && node.scrollWidth > node.clientWidth + 1;
+    const scrollableY = (oy === "auto" || oy === "scroll") && node.scrollHeight > node.clientHeight + 1;
+    if (scrollableX || scrollableY) {
+      const pr = node.getBoundingClientRect();
+      const parentIn = pr.left >= -2 && pr.right <= vw + 2 && pr.top >= -2 && pr.bottom <= vh + 2 && pr.width > 8 && pr.height > 8;
+      if (parentIn) return { ok: true, reason: "scroll-parent", parent: node.id || node.className, box: { left: r.left, right: r.right } };
+    }
+    node = node.parentElement;
+  }
+  return { ok: false, reason: "out", box: { left: r.left, right: r.right, top: r.top, bottom: r.bottom, w: r.width, h: r.height } };
+}
+function fitAudit(screen) {
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const issues = [];
+  const docW = document.documentElement.scrollWidth;
+  const bodyW = document.body.scrollWidth;
+  const scrollOk = docW <= vw + 1 && bodyW <= vw + 1;
+  if (!scrollOk) issues.push("desborde horizontal docW=" + docW + " bodyW=" + bodyW + " innerW=" + vw);
+  const need = ["btnPrefs", "btnOpen", "btnSave", "btnMore", "hdrMoreMenu", "prefsSheet"];
+  const boxes = {};
+  need.forEach(function (id) {
+    const el = $(id);
+    boxes[id] = el ? elementReachable(el, vw, vh) : { ok: false, reason: "missing" };
+  });
+  if ($("btnPrefs") && !elementReachable($("btnPrefs"), vw, vh).ok) issues.push("⚙ fuera de la vista");
+  const tools = [];
+  document.querySelectorAll(".tools .tbtn").forEach(function (el) {
+    if (el.hidden) return;
+    const info = elementReachable(el, vw, vh);
+    tools.push({ id: el.id, on: el.classList.contains("on"), ok: info.ok, reason: info.reason, box: info.box });
+    if (!info.ok) issues.push("herramienta " + (el.id || el.textContent.trim()) + " inalcanzable");
+  });
+  const dock = $("selDock");
+  let dockFrac = 0;
+  const stage = $("stage") || $("view");
+  const sh = stage ? stage.getBoundingClientRect().height : vh;
+  if (dock && dock.classList.contains("show") && isMobileLayout()) {
+    const dh = dock.getBoundingClientRect().height;
+    dockFrac = sh > 0 ? dh / sh : 0;
+    if (dockFrac > 0.30) issues.push("hoja de selección cubre " + (dockFrac * 100).toFixed(0) + "% de la gráfica");
+  }
+  const prefs = $("prefsSheet");
+  const prefSheet = prefs && prefs.querySelector(".sheet");
+  let prefsScrollable = false, prefsOpenable = !!( $("btnPrefs") && elementReachable($("btnPrefs"), vw, vh).ok );
+  if (prefSheet) {
+    const cs = getComputedStyle(prefSheet);
+    const maxH = cs.maxHeight;
+    prefsScrollable = (cs.overflowY === "auto" || cs.overflowY === "scroll" || cs.overflow === "auto") || prefSheet.scrollHeight <= prefSheet.clientHeight + 2;
+    if (prefs && prefs.classList.contains("show")) {
+      const r = prefSheet.getBoundingClientRect();
+      if (r.width > vw + 2) issues.push("preferencias desbordan el ancho");
+      if (r.height > vh + 2) issues.push("preferencias desbordan el alto");
+    }
+  }
+  ["saveSheet", "libSheet"].forEach(function (id) {
+    const el = $(id);
+    if (!el || el.hidden || !el.classList.contains("show")) return;
+    const sheet = el.querySelector(".sheet, .pwa-sheet") || el;
+    const r = sheet.getBoundingClientRect();
+    if (r.width > vw + 2) issues.push(id + " desborda el ancho");
+    if (r.left < -2 || r.right > vw + 2) issues.push(id + " sale del viewport");
+  });
+  const header = document.querySelector("header");
+  if (header) {
+    const hr = header.getBoundingClientRect();
+    if (hr.width > vw + 2 || header.scrollWidth > header.clientWidth + 2) issues.push("cabecera con desborde horizontal");
+  }
+  return {
+    screen: screen || ($("app") && $("app").dataset.mobTab) || "plot",
+    scrollOk: scrollOk,
+    scrollWidth: docW,
+    innerWidth: vw,
+    innerHeight: vh,
+    issues: issues,
+    ok: issues.length === 0,
+    tools: tools,
+    prefsOpenable: prefsOpenable,
+    prefsScrollable: prefsScrollable,
+    dockFrac: dockFrac,
+    precExit: !!( $("precExit") && !$("precExit").hidden && $("precExit").classList.contains("show") ),
+    moreOpen: !!( $("hdrMoreMenu") && $("hdrMoreMenu").classList.contains("open") ),
+    immersive: isImmersive(),
+    boxes: boxes
+  };
+}
 
 /* ---------- Panel / divisor / pestañas / pantalla completa ---------- */
 function uiState() { try { return JSON.parse(lsGet(UI_KEY) || "{}"); } catch (e) { return {}; } }
@@ -4229,7 +4733,17 @@ function syncLayout() {
 }
 document.querySelectorAll("#side > .tabs .tab").forEach(t => t.addEventListener("click", () => setTab(t.dataset.tab)));
 document.querySelectorAll(".mob-tab").forEach(t => t.addEventListener("click", () => setMobTab(t.dataset.mob)));
-if ($("btnPrefs")) $("btnPrefs").addEventListener("click", openPrefs);
+if ($("btnPrefs")) $("btnPrefs").addEventListener("click", () => { setMoreMenu(false); openPrefs(); });
+if ($("btnMore")) $("btnMore").addEventListener("click", ev => { ev.stopPropagation(); toggleMoreMenu(); });
+document.addEventListener("click", ev => {
+  const menu = $("hdrMoreMenu");
+  if (!menu || !menu.classList.contains("open")) return;
+  if (menu.contains(ev.target) || ev.target === $("btnMore")) return;
+  setMoreMenu(false);
+});
+if ($("selExpand")) $("selExpand").addEventListener("click", ev => { ev.stopPropagation(); toggleSelMore(); });
+if ($("selClose")) $("selClose").addEventListener("click", ev => { ev.stopPropagation(); dismissSelDock(); });
+if ($("precExit")) $("precExit").addEventListener("click", ev => { ev.stopPropagation(); setPrecMode(false); });
 if ($("prefsClose")) $("prefsClose").addEventListener("click", closePrefs);
 if ($("prefsSheet")) $("prefsSheet").addEventListener("click", ev => { if (ev.target === $("prefsSheet")) closePrefs(); });
 if ($("btnResetColors")) $("btnResetColors").addEventListener("click", () => resetGColors());
@@ -4252,6 +4766,7 @@ document.querySelectorAll(".pref-seg").forEach(seg => {
 });
 document.addEventListener("keydown", ev => {
   if (ev.key === "Escape" && $("prefsSheet") && $("prefsSheet").classList.contains("show")) closePrefs();
+  if (ev.key === "Escape") { setMoreMenu(false); if (isImmersive()) setImmersive(false); }
 });
 $("btnPanel").addEventListener("click", () => showPanel($("side").classList.contains("collapsed")));
 if ($("roStrip")) $("roStrip").addEventListener("click", () => { if (isMobileLayout()) setMobTab("data"); });
@@ -4267,16 +4782,29 @@ if ($("roStrip")) $("roStrip").addEventListener("click", () => { if (isMobileLay
   sp.addEventListener("pointerup", () => { if (!dragging) return; dragging = false; sp.classList.remove("drag"); saveUi({ sideW: side.style.width }); });
   sp.addEventListener("dblclick", () => showPanel(false));
 })();
+function isImmersive() { return $("app") && $("app").classList.contains("immersive"); }
+function setImmersive(on) {
+  if (!$("app")) return;
+  $("app").classList.toggle("immersive", !!on);
+  const btn = $("zFull");
+  if (btn) btn.classList.toggle("on", !!on);
+  syncFullBtn();
+  if (typeof resize === "function") setTimeout(resize, 30);
+}
 function toggleFull() {
-  const el = isMobileLayout() ? $("stage") : $("plotcol");
+  if (isMobileLayout()) { setImmersive(!isImmersive()); return; }
+  const el = $("plotcol");
   if (document.fullscreenElement) document.exitFullscreen();
   else if (el.requestFullscreen) el.requestFullscreen().catch(() => toast("El navegador no permitió la pantalla completa."));
 }
 function syncFullBtn() {
-  const on = !!document.fullscreenElement;
-  $("zFull").innerHTML = on
-    ? '<span class="lbl-d">Salir de pantalla completa</span><span class="lbl-m">Salir</span>'
-    : '<span class="lbl-d">Pantalla completa</span><span class="lbl-m">Plena</span>';
+  const on = isMobileLayout() ? isImmersive() : !!document.fullscreenElement;
+  const btn = $("zFull");
+  if (!btn) return;
+  btn.classList.toggle("on", on);
+  btn.innerHTML = on
+    ? '<span class="lbl-d">Salir de pantalla completa</span><span class="lbl-m">⛶</span>'
+    : '<span class="lbl-d">Pantalla completa</span><span class="lbl-m">⛶</span>';
 }
 document.addEventListener("fullscreenchange", () => { syncFullBtn(); setTimeout(resize, 50); });
 $("roHead").addEventListener("click", () => {
@@ -4527,6 +5055,7 @@ function updatePickInfo() {
   if (!selLine || hidePlotOverlays()) {
     el.classList.remove("show");
     el.hidden = true;
+    syncSelDock();
     return;
   }
   const txt = formatSelLineText() + (selNoMove ? "  (sin movimiento)" : "");
@@ -4543,6 +5072,7 @@ function updatePickInfo() {
   if (btn) btn.hidden = false;
   el.hidden = false;
   el.classList.add("show");
+  syncSelDock();
 }
 function drawPointMark(z, xDia, fill, stroke, r) {
   if (z == null || xDia == null) return;
@@ -4637,6 +5167,8 @@ function selectLine(line, opts) {
   if (!opts.silent) redraw();
   else highlightEditorLine(selLine || editorHighlightLine(), !!opts.scrollEditor);
   if (opts.scrollEditor) keepEditorLineVisible();
+  if (selLine) selDockUserClosed = false;
+  syncSelDock();
   return { line: selLine, blocks: selBlocks, noMove: selNoMove, pos: selPos, source: selSource };
 }
 function selectedInfo() {
@@ -5731,9 +6263,23 @@ window.__vf = {
       hasOrigSim: !!(origSim && origSim.blocks),
       selected: selectedInfo(),
       gColors: { 0: gColors[0], 1: gColors[1], 2: gColors[2], 3: gColors[3] },
-      orientation: (window.innerWidth >= window.innerHeight) ? "landscape" : "portrait"
+      orientation: (window.innerWidth >= window.innerHeight) ? "landscape" : "portrait",
+      fit: fitAudit(($("app") && $("app").dataset.mobTab) || "plot"),
+      stageChrome: box("stageChrome"),
+      btnMore: box("btnMore"),
+      hdrMoreMenu: box("hdrMoreMenu"),
+      selDock: box("selDock"),
+      precExit: box("precExit"),
+      toolsBox: box(document.querySelector(".tools")),
+      immersive: isImmersive()
     };
-  }
+  },
+  fitAudit: fitAudit,
+  setImmersive: setImmersive,
+  isImmersive: isImmersive,
+  dismissSelDock: dismissSelDock,
+  setMoreMenu: setMoreMenu,
+  syncSelDock: syncSelDock
 };
 </script>
 

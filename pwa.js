@@ -155,7 +155,11 @@
       ".pwa-item .ht{color:#93a0b3;font-size:13px;}",
       ".pwa-item .del{flex:none;min-width:44px;min-height:44px;}",
       ".pwa-hint{padding:8px 10px;background:rgba(59,158,255,.12);border:1px solid #2b6ea8;border-radius:8px;font-size:14px;margin:0 0 10px;}",
-      "html.layout-mobile #btnLibrary,html.layout-mobile #btnInstall{min-height:44px;min-width:44px;}"
+      "html.layout-mobile #btnLibrary,html.layout-mobile #btnInstall{min-height:44px;min-width:44px;}",
+      ".pwa-sheet-back,.pwa-sheet{max-width:100%;box-sizing:border-box;}",
+      ".pwa-sheet{overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}",
+      "@media(orientation:landscape){.pwa-sheet-back.show{align-items:stretch;justify-content:flex-end;}",
+      ".pwa-sheet{width:min(400px,86vw);max-width:86vw;height:100%;max-height:100%;border-radius:0;border-left:1px solid #2a3340;}}"
     ].join("");
     document.head.appendChild(style);
 
@@ -431,11 +435,13 @@
   function addHeaderButtons() {
     const actions = document.querySelector(".hdr-actions");
     if (!actions || $("btnLibrary") || $("btnInstall")) return;
+    const menu = $("hdrMoreMenu") || actions;
     if (DUAL) {
       const inst0 = document.createElement("button");
       inst0.type = "button"; inst0.className = "btn primary"; inst0.id = "btnInstall";
       inst0.textContent = "Instalar"; inst0.title = "Añadir a la pantalla de inicio"; inst0.hidden = true;
-      actions.insertBefore(inst0, $("btnOpen") || actions.firstElementChild);
+      if (menu.firstChild) menu.insertBefore(inst0, menu.firstChild);
+      else menu.appendChild(inst0);
       return;
     }
     const lib = document.createElement("button");
@@ -444,7 +450,10 @@
     lib.id = "btnLibrary";
     lib.textContent = "Biblioteca";
     lib.title = "Ejemplos y programas recientes";
-    lib.addEventListener("click", openLibrary);
+    lib.addEventListener("click", function () {
+      if (window.__vf && window.__vf.setMoreMenu) window.__vf.setMoreMenu(false);
+      openLibrary();
+    });
     const inst = document.createElement("button");
     inst.type = "button";
     inst.className = "btn primary";
@@ -452,13 +461,12 @@
     inst.textContent = "Instalar";
     inst.title = "Añadir a la pantalla de inicio";
     inst.hidden = true;
-    const openBtn = $("btnOpen") || $("btnSave") || actions.firstElementChild;
-    if (openBtn && openBtn.parentNode === actions) {
-      actions.insertBefore(lib, openBtn);
-      actions.insertBefore(inst, openBtn);
+    if (menu.firstChild) {
+      menu.insertBefore(inst, menu.firstChild);
+      menu.insertBefore(lib, inst);
     } else {
-      actions.appendChild(lib);
-      actions.appendChild(inst);
+      menu.appendChild(lib);
+      menu.appendChild(inst);
     }
   }
 
