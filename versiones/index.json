@@ -1,9 +1,18 @@
 {
   "current": {
-    "version": "6574d4431d72",
-    "summary": "En el celular la cabecera, las herramientas y las hojas ya caben en vertical y en horizontal: menú ⋯, hoja compacta de selección y ⚙ siempre se puede abrir."
+    "version": "f799f09f34b2",
+    "summary": "Color de fondo día o noche (☀/🌙): se cambia desde el menú ⋯ o en Ajustes ⚙ y queda recordado en este aparato."
   },
   "versions": [
+    {
+      "version": "6574d4431d72",
+      "commit": "acdd1b7d",
+      "date": "2026-11-18T07:12:17-05:00",
+      "date_label": "18 nov 2026, 07:12 (hora de Indianapolis, UTC-5)",
+      "summary": "En el celular la cabecera, las herramientas y las hojas ya caben en vertical y en horizontal: menú ⋯, hoja compacta de selección y ⚙ siempre se puede abrir.",
+      "heads": 2,
+      "has_dual": true
+    },
     {
       "version": "fc7814fbfa71",
       "commit": "594610b0d57430937b9b4d3f97f5bbdeca084ce0",
