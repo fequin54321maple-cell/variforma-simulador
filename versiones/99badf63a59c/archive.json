@@ -1,0 +1,9 @@
+{
+  "version": "99badf63a59c",
+  "commit": "7b96a1bd27da579b319ce553b25d07cb79d01f94",
+  "date": "2026-11-13T07:30:53-05:00",
+  "date_label": "13 nov 2026, 07:30 (hora de Indianapolis, UTC-5)",
+  "summary": "Abrir los dos programas a la vez, intercambiarlos, verlos lado a lado y ajustar tiempos de subprogramas externos.",
+  "heads": 2,
+  "has_dual": true
+}

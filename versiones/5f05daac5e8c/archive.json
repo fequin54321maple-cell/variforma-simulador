@@ -1,0 +1,9 @@
+{
+  "version": "5f05daac5e8c",
+  "commit": "fa3acea47d75186f9b3c491262e2f94a055ac126",
+  "date": "2026-11-12T23:06:04-05:00",
+  "date_label": "12 nov 2026, 23:06 (hora de Indianapolis, UTC-5)",
+  "summary": "Las líneas con «/» (block delete) se ejecutan por defecto.",
+  "heads": 2,
+  "has_dual": true
+}

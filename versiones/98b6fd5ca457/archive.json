@@ -1,0 +1,9 @@
+{
+  "version": "98b6fd5ca457",
+  "commit": "57f7873c3d859c617ffe2282e6813214c0548189",
+  "date": "2026-11-12T21:38:25-05:00",
+  "date_label": "12 nov 2026, 21:38 (hora de Indianapolis, UTC-5)",
+  "summary": "Primera versión del simulador de dos cabezas, con esperas sincronizadas y un ejemplo.",
+  "heads": 2,
+  "has_dual": true
+}

@@ -1,0 +1,9 @@
+{
+  "version": "f6898eb42f5b",
+  "commit": "fba929391123d0abb6718f71b5ec9789f4c1cbf3",
+  "date": "2026-11-13T10:55:59-05:00",
+  "date_label": "13 nov 2026, 10:55 (hora de Indianapolis, UTC-5)",
+  "summary": "Acomodo final: Cabeza 2 a la izquierda (pistola y R12) y Cabeza 1 a la derecha (R12 y R5), con el ejemplo según el video.",
+  "heads": 2,
+  "has_dual": true
+}

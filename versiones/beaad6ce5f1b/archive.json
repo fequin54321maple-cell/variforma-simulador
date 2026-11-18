@@ -1,0 +1,9 @@
+{
+  "version": "beaad6ce5f1b",
+  "commit": "31720e4b3a924f98032edd6f65598c7c6be8eb75",
+  "date": "2026-11-11T14:57:25-05:00",
+  "date_label": "11 nov 2026, 14:57 (hora de Indianapolis, UTC-5)",
+  "summary": "La gráfica y el editor quedan vinculados, y los colores de G00–G03 se pueden cambiar.",
+  "heads": 1,
+  "has_dual": false
+}

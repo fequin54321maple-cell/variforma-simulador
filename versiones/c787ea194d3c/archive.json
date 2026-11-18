@@ -1,0 +1,9 @@
+{
+  "version": "c787ea194d3c",
+  "commit": "9657126baa8d6a72faca7461f6bb95064ede62f7",
+  "date": "2026-11-11T13:47:38-05:00",
+  "date_label": "11 nov 2026, 13:47 (hora de Indianapolis, UTC-5)",
+  "summary": "En el teléfono, la gráfica sigue visible al editar el código, con divisor y seguimiento del cursor.",
+  "heads": 1,
+  "has_dual": false
+}

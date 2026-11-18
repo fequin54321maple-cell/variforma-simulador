@@ -1,0 +1,9 @@
+{
+  "version": "ae4f7ee200dd",
+  "commit": "391550c8499bfbc3de57a6020bb0a84b3f40a343",
+  "date": "2026-11-13T13:53:56-05:00",
+  "date_label": "13 nov 2026, 13:53 (hora de Indianapolis, UTC-5)",
+  "summary": "P1000 es parámetro 1 (no la pistola); #535 indica el número de pasadas; la asignación de diecoat ya no se confunde con el R5.",
+  "heads": 2,
+  "has_dual": true
+}
