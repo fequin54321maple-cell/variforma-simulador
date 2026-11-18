@@ -218,16 +218,23 @@
     max-width: calc(100% - 24px);
   }
   .plot-legend span { display: inline-flex; align-items: center; white-space: nowrap; }
-  .pick-info {
+  .pick-info, .cursor-info {
     position: absolute; left: 8px; right: auto; bottom: 42px; z-index: 4;
     display: none; align-items: center; gap: 8px; padding: 6px 8px;
     background: rgba(16,20,28,.94); border: 1px solid var(--line); border-radius: 8px;
-    font-size: 12px; color: var(--text); max-width: min(520px, calc(100% - 16px));
+    font-size: 12px; color: var(--text); max-width: min(560px, calc(100% - 16px));
     box-shadow: 0 4px 16px rgba(0,0,0,.35);
+    flex-wrap: wrap;
   }
-  .pick-info.show { display: flex; }
-  .pick-info #pickLineText { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pick-info #btnGoCode { flex: none; min-height: 44px; min-width: 44px; padding: 6px 12px; }
+  .pick-info.show, .cursor-info.show { display: flex; }
+  .pick-info #pickLineText, .cursor-info #cursorText { flex: 1 1 160px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pick-info #pickMidText { flex: 1 1 100%; font-size: 11px; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .pick-actions { display: flex; flex-wrap: wrap; gap: 6px; flex: none; }
+  .pick-info #btnGoCode, .pick-info #btnInsertMid, .cursor-info #btnCopyXZ, .cursor-info #btnInsertG01 {
+    flex: none; min-height: 44px; min-width: 44px; padding: 6px 12px;
+  }
+  .cursor-info { bottom: auto; top: 48px; z-index: 5; }
+  canvas#view.prec { cursor: crosshair; }
   .splitter { width: 7px; cursor: col-resize; background: var(--bg2); border-left: 1px solid var(--line); border-right: 1px solid var(--line); flex: none; }
   .splitter:hover, .splitter.drag { background: #1f3a5a; }
   .side.sbs { min-width: min(940px, 56vw); }
@@ -473,8 +480,12 @@
   html.layout-mobile .plot-legend {
     left: 6px; bottom: 6px; font-size: 10px; padding: 3px 6px; gap: 3px 8px;
   }
-  html.layout-mobile .pick-info { left: 6px; right: 6px; bottom: 36px; font-size: 12px; max-width: calc(100% - 12px); }
-  html.layout-mobile .app.mob-editor .pick-info { display: none !important; }
+  html.layout-mobile .pick-info, html.layout-mobile .cursor-info {
+    left: 6px; right: 6px; bottom: 36px; font-size: 12px; max-width: calc(100% - 12px);
+  }
+  html.layout-mobile .cursor-info { top: auto; bottom: 88px; }
+  html.layout-mobile .app.mob-editor .pick-info,
+  html.layout-mobile .app.mob-editor .cursor-info { display: none !important; }
   html.layout-mobile .mob-tabs {
     display: flex;
     grid-area: tabs;
@@ -869,7 +880,18 @@
         <div class="head-strip" id="headStrip" hidden aria-label="Línea actual de cada cabeza"></div>
         <div class="pick-info" id="pickInfo" hidden>
           <div id="pickLineText"></div>
-          <button class="btn primary" type="button" id="btnGoCode">Ir al código</button>
+          <div id="pickMidText"></div>
+          <div class="pick-actions">
+            <button class="btn primary" type="button" id="btnInsertMid" hidden>➕ Insertar punto medio</button>
+            <button class="btn primary" type="button" id="btnGoCode">Ir al código</button>
+          </div>
+        </div>
+        <div class="cursor-info" id="cursorInfo" hidden>
+          <div id="cursorText"></div>
+          <div class="pick-actions">
+            <button class="btn" type="button" id="btnCopyXZ">📋 Copiar X Z</button>
+            <button class="btn primary" type="button" id="btnInsertG01">➕ Insertar G01 aquí</button>
+          </div>
         </div>
         <div class="ro-strip" id="roStrip" title="Toque para ver más datos">
           <span><i>X</i><b id="rsX">—</b></span>
@@ -890,6 +912,8 @@
           <button class="tbtn" id="zOut" type="button" title="Alejar">－</button>
           <button class="tbtn" id="zFit" type="button" title="Encajar todo">Encajar</button>
           <button class="tbtn" id="zBox" type="button" title="Zoom a caja: arrastre un rectángulo (también Mayús + arrastrar)">Caja</button>
+          <button class="tbtn" id="zPrec" type="button" title="Cursor de precisión: arrastre para leer X y Z del programa. Un toque corto sigue seleccionando el tramo; el pellizco hace zoom." aria-label="Precisión">🎯 <span class="lbl-d">Precisión</span></button>
+          <button class="tbtn" id="zSnap" type="button" title="Imán: el cursor se pega al punto de trayectoria más cercano." aria-label="Imán">🧲</button>
           <button class="tbtn" id="zRoller" type="button" title="Zoom al rodillo activo">Rodillo</button>
           <button class="tbtn" id="zFlange" type="button" title="Zoom a la pestaña (T0205)">Pestaña</button>
           <button class="tbtn" id="zFollow" type="button" title="Seguir el rodillo durante la animación">Seguir</button>
@@ -1093,7 +1117,8 @@
         <label class="chk"><input type="checkbox" id="dualSwap"> Invertir lados (Cabeza 1 a la izquierda)</label>
         <label class="chk"><input type="checkbox" id="dualZDown"> Z mayor hacia abajo</label>
       </div>
-      <div class="pref-sec"><a class="btn" id="lnkModePrefs" href="dos_cabezas.html" hidden>Simulador de 2 cabezas →</a></div>
+      <div class="pref-sec"><a class="btn" id="lnkModePrefs" href="dos_cabezas.html" hidden>Simulador de 2 cabezas →</a>
+        <a class="btn" id="lnkVersiones" href="versiones/" hidden>Versiones anteriores</a></div>
       <button class="btn primary" type="button" id="prefsClose">Listo</button>
     </div>
   </div>
@@ -2217,6 +2242,181 @@ function parseSubTimes(spec) {
   return out;
 }
 
+
+/* ---------- Punto medio de tramo y partición de bloque NC ---------- */
+function detectNumStyle(raw) {
+  const body = stripComments(raw || "");
+  const re = /[A-Za-z]\s*([-+]?(?:\d+\.\d+|\d+\.|\.\d+|\d+))/g;
+  let m, maxDec = 0, trailingDot = false, hadDot = false;
+  while ((m = re.exec(body))) {
+    const n = m[1];
+    const dot = n.indexOf(".");
+    if (dot >= 0) {
+      hadDot = true;
+      const frac = n.slice(dot + 1);
+      if (!frac.length) trailingDot = true;
+      else maxDec = Math.max(maxDec, frac.length);
+    }
+  }
+  return { hadDot: hadDot, trailingDot: trailingDot, maxDec: maxDec };
+}
+function formatNcVal(v, style) {
+  style = style || { hadDot: true, trailingDot: true, maxDec: 3 };
+  if (v == null || !isFinite(v)) return "";
+  if (!style.hadDot && Math.abs(v - Math.round(v)) < 1e-9) return String(Math.round(v));
+  const keepZeros = (style.maxDec > 0) && !style.trailingDot;
+  const maxDec = keepZeros ? style.maxDec : Math.max(style.maxDec || 0, 3);
+  let s = Number(v).toFixed(maxDec);
+  if (!keepZeros) {
+    s = s.replace(/(\.\d*?)0+$/, "$1");
+    if (s.endsWith(".")) {
+      if (style.trailingDot || style.hadDot) return s;
+      return s.slice(0, -1);
+    }
+    if (s.indexOf(".") < 0 && (style.trailingDot || style.hadDot)) return s + ".";
+  }
+  return s;
+}
+function formatGCode(g, body) {
+  if (g == null) return "";
+  if (new RegExp("G0+" + String(g) + "\\b", "i").test(body || "")) return "G" + String(g).padStart(2, "0");
+  return "G" + String(g);
+}
+function axisTok(letter, v, style) { return letter + formatNcVal(v, style); }
+function formatXZ(x, z, dec) {
+  dec = dec == null ? 2 : dec;
+  const fx = (x == null || !isFinite(x)) ? "—" : Number(x).toFixed(dec);
+  const fz = (z == null || !isFinite(z)) ? "—" : Number(z).toFixed(dec);
+  return "X" + fx + " Z" + fz;
+}
+function signedArcR(radius, da) {
+  if (radius == null || !isFinite(radius)) return null;
+  const r = Math.abs(radius);
+  return (Math.abs(da) > Math.PI + 1e-9) ? -r : r;
+}
+function arcGeometry(z0, x0d, z1, x1d, rWord, clockwise, iWord, kWord) {
+  if (z0 == null || x0d == null || z1 == null || x1d == null) return null;
+  const x0 = x0d / 2, x1 = x1d / 2;
+  let center = null, radius = null, major = false;
+  if (rWord != null && Math.abs(rWord) > 1e-12) {
+    major = rWord < 0;
+    radius = Math.abs(rWord);
+    center = arcCenter(z0, x0, z1, x1, radius, !!clockwise);
+    if (center && major) {
+      const mz = (z0 + z1) / 2, mx = (x0 + x1) / 2;
+      center = [2 * mz - center[0], 2 * mx - center[1]];
+    }
+    if (!center) return null;
+  } else if (iWord != null || kWord != null) {
+    const I = iWord || 0, K = kWord || 0;
+    center = [z0 + K, x0 + I];
+    radius = Math.hypot(I, K);
+    if (radius < 1e-12) return null;
+  } else return null;
+  const cz = center[0], cx = center[1];
+  let a0 = Math.atan2(x0 - cx, z0 - cz);
+  let a1 = Math.atan2(x1 - cx, z1 - cz);
+  let da = a1 - a0;
+  if (clockwise) { if (da > 0) da -= 2 * Math.PI; }
+  else { if (da < 0) da += 2 * Math.PI; }
+  return { cz: cz, cx: cx, radius: radius, a0: a0, a1: a1, da: da, clockwise: !!clockwise, major: major };
+}
+function motionMidpoint(startZ, startX, endZ, endX, g, rWord, iWord, kWord) {
+  if (startZ == null || startX == null || endZ == null || endX == null) return null;
+  const motion = g == null ? 1 : g;
+  if (motion === 2 || motion === 3) {
+    const geo = arcGeometry(startZ, startX, endZ, endX, rWord, motion === 2, iWord, kWord);
+    if (!geo) return { z: (startZ + endZ) / 2, x: (startX + endX) / 2, kind: "line", fallback: true };
+    const ang = geo.a0 + geo.da / 2;
+    const z = geo.cz + geo.radius * Math.cos(ang);
+    const r = geo.cx + geo.radius * Math.sin(ang);
+    return { z: z, x: 2 * r, kind: "arc", g: motion, geo: geo, r: signedArcR(geo.radius, geo.da) };
+  }
+  return { z: (startZ + endZ) / 2, x: (startX + endX) / 2, kind: "line", g: motion };
+}
+function motionWordsFromRaw(raw) {
+  const body = stripComments(raw || "");
+  const words = parseWords(body);
+  return {
+    body: body,
+    g: (function () { const gs = intWords(words, "G"); for (let i = 0; i < gs.length; i++) if (gs[i] === 0 || gs[i] === 1 || gs[i] === 2 || gs[i] === 3) return gs[i]; return null; })(),
+    r: lastWord(words, "R"),
+    i: lastWord(words, "I"),
+    k: lastWord(words, "K")
+  };
+}
+function midpointFromBlock(b) {
+  if (!b || b.start_x == null || b.start_z == null || b.end_x == null || b.end_z == null) return null;
+  const w = motionWordsFromRaw(b.raw || b.text || "");
+  const g = b.g != null ? b.g : w.g;
+  return motionMidpoint(b.start_z, b.start_x, b.end_z, b.end_x, g, b.r != null ? b.r : w.r, w.i, w.k);
+}
+function canSplitMotion(g) { return g === 0 || g === 1 || g === 2 || g === 3; }
+function splitMotionLine(raw, mid, opts) {
+  opts = opts || {};
+  const style = detectNumStyle(raw);
+  const leadM = String(raw || "").match(/^(\s*\/?\s*)/);
+  const lead = leadM ? leadM[1] : "";
+  let comment = "";
+  const cm = String(raw || "").match(/(\([^)]*\))\s*$/);
+  if (cm) comment = " " + cm[1];
+  const body = stripComments(raw || "").replace(/^\s*\/?\s*/, "").replace(/\s+$/, "");
+  const words = parseWords(body);
+  const gs = intWords(words, "G");
+  let motion = opts.g;
+  if (motion == null) {
+    for (let i = 0; i < gs.length; i++) if (gs[i] === 0 || gs[i] === 1 || gs[i] === 2 || gs[i] === 3) { motion = gs[i]; break; }
+  }
+  if (motion == null) motion = 1;
+  const midX = mid.x, midZ = mid.z;
+  const endX = opts.endX, endZ = opts.endZ;
+  if (midX == null || midZ == null || endX == null || endZ == null)
+    return { ok: false, error: "faltan coordenadas" };
+  const gTok = formatGCode(motion, body);
+  let r1 = null, r2 = null, ik1 = null, ik2 = null;
+  if (motion === 2 || motion === 3) {
+    const rWord = opts.r != null ? opts.r : lastWord(words, "R");
+    const iWord = opts.i != null ? opts.i : lastWord(words, "I");
+    const kWord = opts.k != null ? opts.k : lastWord(words, "K");
+    const startZ = opts.startZ, startX = opts.startX;
+    const geo = (startZ != null && startX != null)
+      ? arcGeometry(startZ, startX, endZ, endX, rWord, motion === 2, iWord, kWord) : (mid.geo || null);
+    if (geo) {
+      const da1 = geo.da / 2, da2 = geo.da / 2;
+      if (iWord != null || kWord != null) {
+        ik1 = { i: geo.cx - startX / 2, k: geo.cz - startZ };
+        ik2 = { i: geo.cx - midX / 2, k: geo.cz - midZ };
+      } else {
+        r1 = signedArcR(geo.radius, da1);
+        r2 = signedArcR(geo.radius, da2);
+      }
+    } else if (rWord != null) { r1 = rWord; r2 = rWord; }
+  }
+  function geom(x, z, rS, ik) {
+    let s = gTok + " " + axisTok("X", x, style) + " " + axisTok("Z", z, style);
+    if (ik) s += " " + axisTok("I", ik.i, style) + " " + axisTok("K", ik.k, style);
+    else if (rS != null) s += " " + axisTok("R", rS, style);
+    return s;
+  }
+  const skip = { X: 1, Z: 1, U: 1, W: 1, R: 1, I: 1, K: 1 };
+  const extras = [];
+  let nTok = null;
+  ADDRESS_RE.lastIndex = 0;
+  let m;
+  const src = body;
+  while ((m = ADDRESS_RE.exec(src))) {
+    const L = m[1].toUpperCase();
+    if (L === "N" && !nTok) { nTok = m[0].replace(/\s+/g, ""); continue; }
+    if (L === "G" && (Math.trunc(parseFloat(m[2])) === motion)) continue;
+    if (skip[L]) continue;
+    extras.push(m[0].replace(/\s+/g, ""));
+  }
+  const extraStr = extras.length ? (" " + extras.join(" ")) : "";
+  const line1 = lead + (nTok ? (nTok + " ") : "") + geom(midX, midZ, r1, ik1) + extraStr + comment;
+  const line2 = lead + geom(endX, endZ, r2, ik2);
+  return { ok: true, lines: [line1, line2], line1: line1, line2: line2, mid: mid, g: motion, style: style };
+}
+
 /* ---------------- UI ---------------- */
 const $ = id => document.getElementById(id);
 const canvas = $("view");
@@ -2227,6 +2427,7 @@ let sim = null, currentT = 0, playing = false, lastTs = 0;
 let view = { cz: 0, cr: 0, s: 1, ready: false };
 let lastSize = { w: 0, h: 0 };
 let boxTool = false, follow = false, followCursor = true, origSim = null, drag = null, hover = null;
+let precMode = false, snapOn = false, precCursor = null, selMid = null;
 let selLine = 0, selBlocks = [], selNoMove = false, selSource = null, selPos = null;
 let accepted = "";
 let previewSim = null;
@@ -2806,7 +3007,7 @@ function showRestoreBanner(saved) {
 
 function openProgram(text, name, preloaded) {
   if (DUAL && !dualLoading) return dualOpen(text, name, preloaded);
-  selLine = 0; selBlocks = []; selNoMove = false; selSource = null; selPos = null;
+  selLine = 0; selBlocks = []; selNoMove = false; selSource = null; selPos = null; selMid = null; precCursor = null;
   previewSim = null;
   original = String(text).replace(/\r\n?/g, "\n");
   originalName = name || "programa.NCD";
@@ -3414,6 +3615,7 @@ function draw() {
     ctx.fillRect(x, y, bw, bh); ctx.strokeRect(x + .5, y + .5, bw, bh); ctx.restore();
   }
   drawAxes(g);
+  drawPrecisionOverlay();
 }
 function redraw() {
   if (DUAL) dualSyncTimes();
@@ -3423,7 +3625,7 @@ function redraw() {
   const tNow = DUAL ? globalT : currentT;
   $("timeline").value = String(total > 0 ? Math.round((tNow / total) * 1000) : 0);
   $("timeLbl").textContent = fmtTime(tNow) + " / " + fmtTime(total);
-  draw(); updateReadout(); updatePickInfo(); highlightListing(idx);
+  draw(); updateReadout(); updatePickInfo(); updateCursorInfo(); highlightListing(idx);
   if (DUAL) updateHeadStrip();
   highlightEditorLine(editorHighlightLine(), true);
 }
@@ -3530,19 +3732,27 @@ canvas.addEventListener("pointerdown", ev => {
   pointers.set(ev.pointerId, [x, y]);
   try { canvas.setPointerCapture(ev.pointerId); } catch (e) {}
   if (pointers.size >= 2) { startPinch(); ev.preventDefault(); return; }
-  drag = { id: ev.pointerId, x0: x, y0: y, x, y, lx: x, ly: y, moved: false,
-    mode: (boxTool || ev.shiftKey) ? "box" : "pan", pointerType: ev.pointerType || "mouse" };
+  const mode = (boxTool || ev.shiftKey) ? "box" : (precMode ? "prec" : "pan");
+  drag = { id: ev.pointerId, x0: x, y0: y, x, y, lx: x, ly: y, moved: false, mode: mode, pointerType: ev.pointerType || "mouse" };
   if (drag.mode === "pan") canvas.classList.add("dragging");
+  if (drag.mode === "prec") { setPrecFromPointer(x, y, drag.pointerType); ev.preventDefault(); }
 });
 canvas.addEventListener("pointermove", ev => {
   const [x, y] = canvasXY(ev);
   if (pointers.has(ev.pointerId)) pointers.set(ev.pointerId, [x, y]);
   if (pinch && pointers.size >= 2) { updatePinch(); return; }
-  hover = (ev.pointerType === "touch") ? null : s2w(x, y);
+  if (precMode) {
+    if (!drag || drag.mode === "prec") {
+      if (ev.pointerType !== "touch" || (drag && drag.mode === "prec")) setPrecFromPointer(x, y, ev.pointerType || "mouse");
+    }
+  } else {
+    hover = (ev.pointerType === "touch") ? null : s2w(x, y);
+  }
   if (!drag || drag.id !== ev.pointerId) { if (!drag) draw(); return; }
   drag.x = x; drag.y = y;
   const slop = drag.pointerType === "touch" ? 8 : 4;
   if (Math.hypot(drag.x - drag.x0, drag.y - drag.y0) > slop) drag.moved = true;
+  if (drag.mode === "prec" && drag.moved) setPrecFromPointer(x, y, drag.pointerType);
   if (drag.mode === "pan" && drag.moved) {
     if (VERT) { const a = s2w(drag.lx, drag.ly), c = s2w(x, y); view.cz -= c[0] - a[0]; view.cr -= c[1] - a[1]; }
     else { view.cz += (x - drag.lx) / view.s; view.cr += (y - drag.ly) / view.s; }
@@ -3559,7 +3769,8 @@ function finishPointer(ev) {
       pinch = null;
       if (pointers.size === 1) {
         const [rx, ry] = [...pointers.values()][0];
-        drag = { id: [...pointers.keys()][0], x0: rx, y0: ry, x: rx, y: ry, lx: rx, ly: ry, moved: true, mode: "pan", pointerType: "touch" };
+        const mode = precMode ? "prec" : "pan";
+        drag = { id: [...pointers.keys()][0], x0: rx, y0: ry, x: rx, y: ry, lx: rx, ly: ry, moved: true, mode: mode, pointerType: "touch" };
       } else {
         drag = null; canvas.classList.remove("dragging");
       }
@@ -3577,8 +3788,17 @@ function finishPointer(ev) {
     draw();
     return;
   }
+  if (d.mode === "prec") {
+    setPrecFromPointer(x, y, d.pointerType);
+    if (!d.moved) schedulePlotTap(x, y, d.pointerType, true);
+    else { updateCursorInfo(); draw(); }
+    return;
+  }
   if (d.moved) { draw(); return; }
-  const touch = d.pointerType === "touch" || isMobileLayout();
+  schedulePlotTap(x, y, d.pointerType, false);
+}
+function schedulePlotTap(x, y, pointerType, prec) {
+  const touch = pointerType === "touch" || isMobileLayout();
   if (touch) {
     const now = performance.now();
     if (lastTap && now - lastTap.t < 320 && Math.hypot(x - lastTap.x, y - lastTap.y) < 36) {
@@ -3589,11 +3809,16 @@ function finishPointer(ev) {
     }
     lastTap = { t: now, x, y };
     if (tapTimer) clearTimeout(tapTimer);
-    tapTimer = setTimeout(() => { tapTimer = 0; pick(x, y); }, 280);
+    tapTimer = setTimeout(() => { tapTimer = 0; handlePlotTap(x, y, prec); }, 280);
   } else {
-    pick(x, y);
+    handlePlotTap(x, y, prec);
   }
   draw();
+}
+function handlePlotTap(x, y, prec) {
+  const hit = nearestBlockAt(x, y) || (DUAL && nearestOtherHeadAt(x, y));
+  if (hit) { pick(x, y); return; }
+  if (prec || precMode) { setPrecFromPointer(x, y, prec ? "touch" : "mouse"); updateCursorInfo(); draw(); }
 }
 canvas.addEventListener("pointerup", finishPointer);
 canvas.addEventListener("pointercancel", finishPointer);
@@ -3601,7 +3826,212 @@ canvas.addEventListener("pointerleave", ev => {
   if (ev.pointerType === "touch") return;
   hover = null; if (!drag && !pinch) draw();
 });
-function setBoxTool(on) { boxTool = on; $("zBox").classList.toggle("on", on); canvas.classList.toggle("box", on); }
+function setBoxTool(on) { boxTool = on; $("zBox").classList.toggle("on", on); canvas.classList.toggle("box", on); if (on) setPrecMode(false, { silent: true }); }
+
+const PREC_LOUPE = 72;
+function screenToProgram(sx, sy) {
+  const wr = s2w(sx, sy);
+  const z = wr[0];
+  const rPlot = wr[1];
+  const sign = (DUAL && curSign) ? curSign : 1;
+  const r = rPlot * sign;
+  return { z: z, x: r * 2 };
+}
+function programToScreen(z, x) {
+  return w2s(z, (x == null ? 0 : x) / 2);
+}
+function distMm(z0, x0, z1, x1) {
+  return Math.hypot((z1 || 0) - (z0 || 0), ((x1 || 0) - (x0 || 0)) / 2);
+}
+function nearestPathSnap(z, x, sx, sy) {
+  if (!sim) return null;
+  const hit = Math.max(16, hitTolerance() + 6);
+  let best = null;
+  function consider(pz, px, kind, line) {
+    if (pz == null || px == null) return;
+    const p = programToScreen(pz, px);
+    const dpx = Math.hypot(sx - p[0], sy - p[1]);
+    const dmm = distMm(z, x, pz, px);
+    if (dpx <= hit && (!best || dpx < best.dpx)) best = { z: pz, x: px, kind: kind, line: line, dpx: dpx, dmm: dmm };
+  }
+  sim.blocks.forEach(b => {
+    const pts = b.points || [];
+    for (let i = 0; i < pts.length; i++) consider(pts[i][0], pts[i][1], i === 0 ? "inicio" : (i === pts.length - 1 ? "fin" : "punto"), b.line);
+    if (canSplitMotion(b.g)) {
+      const mid = midpointFromBlock(b);
+      if (mid) consider(mid.z, mid.x, "medio", b.line);
+    }
+  });
+  return best;
+}
+function nearestSegmentInfo(z, x) {
+  if (!sim) return null;
+  let best = null;
+  sim.blocks.forEach(b => {
+    const pts = b.points || [];
+    if (pts.length < 2) return;
+    for (let i = 1; i < pts.length; i++) {
+      const z0 = pts[i - 1][0], x0 = pts[i - 1][1], z1 = pts[i][0], x1 = pts[i][1];
+      const vz = z1 - z0, vx = (x1 - x0) / 2;
+      const lz = z - z0, lx = (x - x0) / 2;
+      const ll = vz * vz + vx * vx;
+      const u = ll < 1e-12 ? 0 : Math.max(0, Math.min(1, (lz * vz + lx * vx) / ll));
+      const zz = z0 + u * (z1 - z0), xx = x0 + u * (x1 - x0);
+      const d = distMm(z, x, zz, xx);
+      if (!best || d < best.dmm) best = { dmm: d, z: zz, x: xx, line: b.line, g: b.g, n: b.n, kind: b.kind };
+    }
+  });
+  return best;
+}
+function setPrecFromPointer(px, py, pointerType) {
+  const touch = pointerType === "touch" || (pointerType !== "mouse" && isCoarsePointer());
+  let ax = px, ay = py;
+  if (touch) ay = py - PREC_LOUPE;
+  ax = Math.max(PAD_L, Math.min(cw() - 1, ax));
+  ay = Math.max(0, Math.min(Math.max(0, chh() - PAD_B - 1), ay));
+  let pr = screenToProgram(ax, ay);
+  let snapped = null;
+  if (snapOn) snapped = nearestPathSnap(pr.z, pr.x, ax, ay);
+  if (snapped) pr = { z: snapped.z, x: snapped.x };
+  const near = nearestSegmentInfo(pr.z, pr.x);
+  const sc = programToScreen(pr.z, pr.x);
+  precCursor = {
+    z: pr.z, x: pr.x, sx: sc[0], sy: sc[1],
+    fingerX: px, fingerY: py, touch: touch, snapped: !!snapped,
+    snapKind: snapped ? snapped.kind : null, snapLine: snapped ? snapped.line : null,
+    near: near
+  };
+  updateCursorInfo();
+}
+function setPrecMode(on, opts) {
+  opts = opts || {};
+  precMode = !!on;
+  const btn = $("zPrec");
+  if (btn) btn.classList.toggle("on", precMode);
+  canvas.classList.toggle("prec", precMode);
+  if (precMode && boxTool) setBoxTool(false);
+  if (!precMode) { /* keep last cursor so Julio can still insert */ }
+  saveUi({ precMode: precMode });
+  if (!opts.silent) { updateCursorInfo(); draw(); }
+}
+function setSnapOn(on, opts) {
+  opts = opts || {};
+  snapOn = !!on;
+  const btn = $("zSnap");
+  if (btn) btn.classList.toggle("on", snapOn);
+  saveUi({ snapOn: snapOn });
+  if (precCursor) {
+    const p = programToScreen(precCursor.z, precCursor.x);
+    setPrecFromPointer(precCursor.fingerX != null ? precCursor.fingerX : p[0],
+                       precCursor.fingerY != null ? precCursor.fingerY : p[1],
+                       precCursor.touch ? "touch" : "mouse");
+  }
+  if (!opts.silent) { updateCursorInfo(); draw(); }
+}
+function updateCursorInfo() {
+  const el = $("cursorInfo");
+  if (!el) return;
+  const show = !!(precCursor && !hidePlotOverlays());
+  if (!show || !precCursor) {
+    el.classList.remove("show");
+    el.hidden = true;
+    return;
+  }
+  const c = precCursor;
+  let txt = "Cursor  " + formatXZ(c.x, c.z, 2);
+  if (c.snapped) txt += "  🧲" + (c.snapKind ? (" " + c.snapKind) : "") + (c.snapLine ? (" L" + c.snapLine) : "");
+  if (c.near) txt += "  ·  a " + c.near.dmm.toFixed(2) + " mm del tramo L" + c.near.line;
+  if ($("cursorText")) $("cursorText").textContent = txt;
+  el.hidden = false;
+  el.classList.add("show");
+}
+function drawPrecisionOverlay() {
+  if (!precCursor || precCursor.z == null || precCursor.x == null) return;
+  const p = programToScreen(precCursor.z, precCursor.x);
+  ctx.save();
+  ctx.strokeStyle = "#7dd3fc";
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(PAD_L, p[1]); ctx.lineTo(cw(), p[1]); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(p[0], 0); ctx.lineTo(p[0], chh() - PAD_B); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(p[0] - 14, p[1]); ctx.lineTo(p[0] + 14, p[1]); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(p[0], p[1] - 14); ctx.lineTo(p[0], p[1] + 14); ctx.stroke();
+  ctx.beginPath(); ctx.arc(p[0], p[1], precCursor.snapped ? 7 : 5, 0, Math.PI * 2); ctx.stroke();
+  if (precCursor.touch && precCursor.fingerX != null) {
+    ctx.strokeStyle = "rgba(125,211,252,.55)";
+    ctx.beginPath(); ctx.moveTo(precCursor.fingerX, precCursor.fingerY); ctx.lineTo(p[0], p[1]); ctx.stroke();
+    ctx.beginPath(); ctx.arc(precCursor.fingerX, precCursor.fingerY, 16, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(125,211,252,.35)"; ctx.lineWidth = 2; ctx.stroke();
+  }
+  const label = formatXZ(precCursor.x, precCursor.z, 2) + (precCursor.snapped ? "  🧲" : "");
+  drawPlotLabel(p[0] + 12, p[1] - 16, label, "#7dd3fc");
+  if (precCursor.near) {
+    drawPlotLabel(p[0] + 12, p[1] + 22, "a " + precCursor.near.dmm.toFixed(2) + " mm  L" + precCursor.near.line, "#9aa5b4");
+  }
+  ctx.restore();
+}
+function nextLineAfter(line) {
+  const n = (ed && ed.value ? ed.value.split("\n").length : 0);
+  if (!line) return Math.max(0, n);
+  return Math.max(0, Math.min(n, line));
+}
+function insertG01AtCursor(opts) {
+  opts = opts || {};
+  if (!precCursor) { toast("Toque el gráfico para elegir X y Z."); return false; }
+  const after = opts.afterLine != null ? opts.afterLine : (selLine || (typeof editorCursorLine === "function" ? editorCursorLine() : 0));
+  const lines = ed.value.split("\n");
+  const idx = nextLineAfter(after);
+  const style = detectNumStyle(lines[Math.max(0, idx - 1)] || lines[0] || "X0. Z0.");
+  const line = "G01 " + axisTok("X", precCursor.x, style) + " " + axisTok("Z", precCursor.z, style);
+  lines.splice(idx, 0, line);
+  setEditorText(lines.join("\n"), true);
+  selectLine(idx + 1, { source: "plot", revealEditor: true, focus: false, scrollEditor: true });
+  toast("Insertado " + line.trim() + " después de L" + after);
+  return true;
+}
+function copyPrecXZ() {
+  if (!precCursor) { toast("No hay cursor de precisión."); return ""; }
+  const txt = formatXZ(precCursor.x, precCursor.z, 2);
+  const done = function () { toast("Copiado " + txt); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(done).catch(function () { fallbackCopy(txt); done(); });
+  } else { fallbackCopy(txt); done(); }
+  return txt;
+}
+function fallbackCopy(txt) {
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = txt; ta.setAttribute("readonly", "readonly");
+    ta.style.position = "fixed"; ta.style.left = "-9999px";
+    document.body.appendChild(ta); ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+  } catch (e) {}
+}
+function insertMidpoint(opts) {
+  opts = opts || {};
+  const b = (selBlocks || []).find(blockIsMotion);
+  if (!b || !canSplitMotion(b.g)) { toast("Toque un tramo G01, G02 o G03 para insertar el punto medio."); return false; }
+  const mid = midpointFromBlock(b);
+  if (!mid) { toast("No se pudo calcular el punto medio."); return false; }
+  const lines = ed.value.split("\n");
+  const raw = lines[b.line - 1];
+  if (raw == null) { toast("No está la línea en el editor."); return false; }
+  const w = motionWordsFromRaw(raw);
+  const split = splitMotionLine(raw, mid, {
+    g: b.g, startX: b.start_x, startZ: b.start_z, endX: b.end_x, endZ: b.end_z,
+    r: b.r != null ? b.r : w.r, i: w.i, k: w.k
+  });
+  if (!split.ok) { toast(split.error || "No se pudo partir el bloque."); return false; }
+  lines.splice(b.line - 1, 1, split.line1, split.line2);
+  setEditorText(lines.join("\n"), true);
+  selectLine(b.line, { source: "plot", revealEditor: !!opts.revealEditor, focus: false, scrollEditor: true });
+  toast("Punto medio insertado  " + formatXZ(mid.x, mid.z, 2));
+  return { ok: true, line1: split.line1, line2: split.line2, mid: mid, line: b.line };
+}
+
 
 /* ---------- Panel / divisor / pestañas / pantalla completa ---------- */
 function uiState() { try { return JSON.parse(lsGet(UI_KEY) || "{}"); } catch (e) { return {}; } }
@@ -3898,6 +4328,11 @@ $("zIn").addEventListener("click", () => { const [x, y] = plotCenter(); zoomAt(x
 $("zOut").addEventListener("click", () => { const [x, y] = plotCenter(); zoomAt(x, y, 1 / 1.5); });
 $("zFit").addEventListener("click", () => { fitAll(); draw(); });
 $("zBox").addEventListener("click", () => setBoxTool(!boxTool));
+if ($("zPrec")) $("zPrec").addEventListener("click", () => setPrecMode(!precMode));
+if ($("zSnap")) $("zSnap").addEventListener("click", () => setSnapOn(!snapOn));
+if ($("btnInsertMid")) $("btnInsertMid").addEventListener("click", () => insertMidpoint({ revealEditor: true }));
+if ($("btnCopyXZ")) $("btnCopyXZ").addEventListener("click", () => copyPrecXZ());
+if ($("btnInsertG01")) $("btnInsertG01").addEventListener("click", () => insertG01AtCursor());
 $("zRoller").addEventListener("click", zoomRoller);
 $("zFlange").addEventListener("click", zoomFlange);
 $("zFollow").addEventListener("click", () => { follow = !follow; $("zFollow").classList.toggle("on", follow); redraw(); });
@@ -4075,16 +4510,34 @@ function goToCodeFromPick() {
   if (selLine) revealEditorLine(selLine, { focus: false });
   updatePickInfo();
 }
+function motionGOfSel() {
+  const b = (selBlocks || []).find(blockIsMotion);
+  return b && canSplitMotion(b.g) ? b.g : null;
+}
+function hidePlotOverlays() {
+  // En el teléfono, la tira del gráfico se oculta en la pestaña Código (la gráfica es chica).
+  // En escritorio la gráfica y el editor conviven: hay que dejar visible el punto medio.
+  if (isMobileLayout()) return ($("app").dataset.mobTab || "plot") === "editor";
+  return false;
+}
 function updatePickInfo() {
   const el = $("pickInfo");
   if (!el) return;
-  if (!selLine || inCodeTab()) {
+  if (!selLine || hidePlotOverlays()) {
     el.classList.remove("show");
     el.hidden = true;
     return;
   }
   const txt = formatSelLineText() + (selNoMove ? "  (sin movimiento)" : "");
   if ($("pickLineText")) $("pickLineText").textContent = txt;
+  const midEl = $("pickMidText");
+  const ins = $("btnInsertMid");
+  const can = !!(selMid && motionGOfSel() != null);
+  if (midEl) {
+    midEl.textContent = selMid ? ("Punto medio  " + formatXZ(selMid.x, selMid.z, 2) + (selMid.kind === "arc" ? "  (arco)" : "")) : "";
+    midEl.hidden = !selMid;
+  }
+  if (ins) ins.hidden = !can;
   const btn = $("btnGoCode");
   if (btn) btn.hidden = false;
   el.hidden = false;
@@ -4122,7 +4575,31 @@ function drawSelectionOverlay() {
     const a = b.points[0], c = b.points[b.points.length - 1];
     drawPointMark(a[0], a[1], "#0e1116", SEL_COLOR, 6);
     drawPointMark(c[0], c[1], SEL_COLOR, SEL_CORE, 6);
+    const mid = midpointFromBlock(b);
+    if (mid) {
+      drawPointMark(mid.z, mid.x, "#fff7cc", "#f5b942", 7);
+      const p = w2s(mid.z, mid.x / 2);
+      const label = "medio  " + formatXZ(mid.x, mid.z, 2) + "  L" + (b.line || selLine);
+      drawPlotLabel(p[0] + 10, p[1] - 10, label, "#f5b942");
+    }
+    const pa = w2s(a[0], a[1] / 2), pc = w2s(c[0], c[1] / 2);
+    drawPlotLabel(pa[0] + 8, pa[1] + 14, "ini " + formatXZ(a[1], a[0], 2), SEL_COLOR);
+    drawPlotLabel(pc[0] + 8, pc[1] + 14, "fin " + formatXZ(c[1], c[0], 2), SEL_CORE);
   });
+  ctx.restore();
+}
+function drawPlotLabel(x, y, text, color) {
+  if (!text) return;
+  ctx.save();
+  ctx.font = "11px system-ui, sans-serif";
+  ctx.textAlign = "left"; ctx.textBaseline = "bottom";
+  const w = ctx.measureText(text).width;
+  const px = Math.max(PAD_L + 2, Math.min(cw() - w - 6, x));
+  const py = Math.max(14, Math.min(chh() - PAD_B - 4, y));
+  ctx.fillStyle = "rgba(14,17,22,.82)";
+  ctx.fillRect(px - 3, py - 12, w + 6, 15);
+  ctx.fillStyle = color || "#fff";
+  ctx.fillText(text, px, py);
   ctx.restore();
 }
 function selectLine(line, opts) {
@@ -4133,6 +4610,7 @@ function selectLine(line, opts) {
   const motion = selBlocks.filter(blockIsMotion);
   selNoMove = !!selLine && !motion.length;
   selPos = selNoMove ? positionAtLine(selLine) : (motion[0] ? { z: motion[0].end_z, x: motion[0].end_x, tool: motion[0].tool } : null);
+  selMid = (!selNoMove && motion[0]) ? midpointFromBlock(motion[0]) : null;
   if (!playing && !opts.keepTime) {
     lastDerivedT = null;
     if (motion.length) {
@@ -4171,6 +4649,8 @@ function selectedInfo() {
     kinds: selBlocks.map(b => b.kind),
     g: selBlocks.map(b => b.g),
     pos: selPos,
+    mid: selMid,
+    canSplit: !!(selMid && motionGOfSel()),
     focused: document.activeElement === ed
   };
 }
@@ -4377,7 +4857,7 @@ function captureHead() {
   return {
     original, originalName, isPreloadedFile, accepted, text: ed.value,
     ss: ed.selectionStart, se: ed.selectionEnd, hist, sim, previewSim, origSim, findings, diffInfo,
-    selLine, selBlocks, selNoMove, selSource, selPos, autosaveState,
+    selLine, selBlocks, selNoMove, selSource, selPos, selMid, autosaveState,
     scroll: { x: editorViewScroll.x, y: editorViewScroll.y }
   };
 }
@@ -4385,13 +4865,14 @@ function restoreHead(st) {
   st = st || { original: "", originalName: HEAD_IDS[active] + ".NCD", isPreloadedFile: false, accepted: "", text: "",
     ss: 0, se: 0, hist: { stack: [], idx: -1 }, sim: null, previewSim: null, origSim: null, findings: [],
     diffInfo: { status: [], delBefore: [], hunks: [], changed: 0 }, selLine: 0, selBlocks: [], selNoMove: false,
-    selSource: null, selPos: null, autosaveState: "—", scroll: { x: 0, y: 0 } };
+    selSource: null, selPos: null, selMid: null, autosaveState: "—", scroll: { x: 0, y: 0 } };
   original = st.original; originalName = st.originalName; isPreloadedFile = st.isPreloadedFile;
   accepted = st.accepted; ed.value = st.text;
   try { ed.setSelectionRange(st.ss || 0, st.se || 0); } catch (e) {}
   hist = st.hist; sim = st.sim; previewSim = st.previewSim; origSim = st.origSim;
   findings = st.findings || []; diffInfo = st.diffInfo || diffInfo;
-  selLine = st.selLine; selBlocks = st.selBlocks || []; selNoMove = st.selNoMove; selSource = st.selSource; selPos = st.selPos;
+  selLine = st.selLine; selBlocks = st.selBlocks || []; selNoMove = st.selNoMove; selSource = st.selSource; selPos = st.selPos; selMid = st.selMid || null;
+  precCursor = null;
   autosaveState = st.autosaveState || "—";
   return st;
 }
@@ -4901,6 +5382,7 @@ function saveBothHeads(opts) {
 }
 function setupModeUi() {
   const lnk = $("lnkMode"), lp = $("lnkModePrefs");
+  if (window.__PWA_BUILD__ && $("lnkVersiones")) $("lnkVersiones").hidden = false;
   if (DUAL) {
     document.documentElement.classList.add("dual");
     const h1 = document.querySelector("header h1");
@@ -4978,6 +5460,8 @@ if (DUAL) {
   if (ui.sideW) $("side").style.width = ui.sideW;
   if (ui.splitFrac != null) applySplitFrac(ui.splitFrac);
   followCursor = ui.followCursor !== false;
+  if (ui.precMode) setPrecMode(true, { silent: true });
+  if (ui.snapOn) setSnapOn(true, { silent: true });
   if ($("followCursor")) $("followCursor").checked = followCursor;
   loadGColors();
   syncColorInputs();
@@ -5106,6 +5590,8 @@ window.__vf = {
   acceptEdits: acceptEdits,
   cancelEdits: cancelEdits,
   hasPending: hasPending,
+  undo: undo,
+  redo: redo,
   undoState: function () { return { idx: hist.idx, n: hist.stack.length }; },
   codeNow: function (h) { return DUAL && h != null ? codeNowInfo(simOf(h), headLocalT(h)) : codeNowInfo(sim, currentT); },
   lineCodeHints: lineCodeHints,
@@ -5122,6 +5608,28 @@ window.__vf = {
   nearestBlockAt: nearestBlockAt,
   selectLine: selectLine,
   selected: selectedInfo,
+  motionMidpoint: motionMidpoint,
+  midpointFromBlock: midpointFromBlock,
+  splitMotionLine: splitMotionLine,
+  formatNcVal: formatNcVal,
+  detectNumStyle: detectNumStyle,
+  formatXZ: formatXZ,
+  screenToProgram: screenToProgram,
+  setPrecMode: setPrecMode,
+  setSnapOn: setSnapOn,
+  setPrecFromPointer: setPrecFromPointer,
+  insertMidpoint: insertMidpoint,
+  insertG01AtCursor: insertG01AtCursor,
+  copyPrecXZ: copyPrecXZ,
+  precInfo: function () {
+    return {
+      mode: !!precMode, snap: !!snapOn, cursor: precCursor,
+      mid: selMid, canSplit: !!(selMid && motionGOfSel()),
+      pickVisible: !!(!($("pickInfo") && $("pickInfo").hidden) && $("pickInfo") && $("pickInfo").classList.contains("show")),
+      cursorVisible: !!(!($("cursorInfo") && $("cursorInfo").hidden) && $("cursorInfo") && $("cursorInfo").classList.contains("show")),
+      insertMidHidden: !($("btnInsertMid") && !$("btnInsertMid").hidden)
+    };
+  },
   revealEditorLine: revealEditorLine,
   goToLine: goToLine,
   editorViewScroll: function () { return { x: editorViewScroll.x, y: editorViewScroll.y, lh: lineH(), clientH: ed ? ed.clientHeight : 0, scrollTop: ed ? ed.scrollTop : 0, mirror: !!( $("edwrap") && $("edwrap").classList.contains("mirror-scroll") ) }; },
@@ -5202,6 +5710,12 @@ window.__vf = {
       plotLegend: box("plotLegend"), pickInfo: box("pickInfo"), prefsSheet: box("prefsSheet"),
       prefColors: box("prefColors"), colG00: box("colG00"), btnResetColors: box("btnResetColors"),
       btnGoCode: box("btnGoCode"),
+      btnInsertMid: box("btnInsertMid"),
+      cursorInfo: box("cursorInfo"),
+      zPrec: box("zPrec"),
+      zSnap: box("zSnap"),
+      precMode: !!precMode,
+      snapOn: !!snapOn,
       pendingBar: box("pendingBar"), btnAccept: box("btnAccept"), btnCancelEdit: box("btnCancelEdit"),
       pendingBadge: box("pendingBadge"), btnAcceptPlot: box("btnAcceptPlot"), btnCancelPlot: box("btnCancelPlot"),
       pendingLayout: pendingEditorLayout(),
