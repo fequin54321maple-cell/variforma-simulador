@@ -1,0 +1,116 @@
+{
+  "current": {
+    "version": "fc7814fbfa71",
+    "summary": "Toque un tramo para ver el punto medio e insertarlo, y cursor de precisión 🎯 con imán 🧲 para leer e insertar X/Z."
+  },
+  "versions": [
+    {
+      "version": "ae4f7ee200dd",
+      "commit": "391550c8499bfbc3de57a6020bb0a84b3f40a343",
+      "date": "2026-11-13T13:53:56-05:00",
+      "date_label": "13 nov 2026, 13:53 (hora de Indianapolis, UTC-5)",
+      "summary": "P1000 es parámetro 1 (no la pistola); #535 indica el número de pasadas; la asignación de diecoat ya no se confunde con el R5.",
+      "heads": 2,
+      "has_dual": true
+    },
+    {
+      "version": "f6898eb42f5b",
+      "commit": "fba929391123d0abb6718f71b5ec9789f4c1cbf3",
+      "date": "2026-11-13T10:55:59-05:00",
+      "date_label": "13 nov 2026, 10:55 (hora de Indianapolis, UTC-5)",
+      "summary": "Acomodo final: Cabeza 2 a la izquierda (pistola y R12) y Cabeza 1 a la derecha (R12 y R5), con el ejemplo según el video.",
+      "heads": 2,
+      "has_dual": true
+    },
+    {
+      "version": "22a5c5ff3e24",
+      "commit": "67a934438bf5f30816aff59d675d7e32deee44d8",
+      "date": "2026-11-13T07:59:19-05:00",
+      "date_label": "13 nov 2026, 07:59 (hora de Indianapolis, UTC-5)",
+      "summary": "Etiquetas de códigos M en el editor y la gráfica, y pausas G04 con cuenta regresiva.",
+      "heads": 2,
+      "has_dual": true
+    },
+    {
+      "version": "99badf63a59c",
+      "commit": "7b96a1bd27da579b319ce553b25d07cb79d01f94",
+      "date": "2026-11-13T07:30:53-05:00",
+      "date_label": "13 nov 2026, 07:30 (hora de Indianapolis, UTC-5)",
+      "summary": "Abrir los dos programas a la vez, intercambiarlos, verlos lado a lado y ajustar tiempos de subprogramas externos.",
+      "heads": 2,
+      "has_dual": true
+    },
+    {
+      "version": "5f05daac5e8c",
+      "commit": "fa3acea47d75186f9b3c491262e2f94a055ac126",
+      "date": "2026-11-12T23:06:04-05:00",
+      "date_label": "12 nov 2026, 23:06 (hora de Indianapolis, UTC-5)",
+      "summary": "Las líneas con «/» (block delete) se ejecutan por defecto.",
+      "heads": 2,
+      "has_dual": true
+    },
+    {
+      "version": "3955d6368ea1",
+      "commit": "9bdb9bdc4a40911dc3cffecbdbaf5d550a79bc47",
+      "date": "2026-11-12T22:54:20-05:00",
+      "date_label": "12 nov 2026, 22:54 (hora de Indianapolis, UTC-5)",
+      "summary": "El spray de diecoat (M9…M10) se ve en la gráfica.",
+      "heads": 2,
+      "has_dual": true
+    },
+    {
+      "version": "98b6fd5ca457",
+      "commit": "57f7873c3d859c617ffe2282e6813214c0548189",
+      "date": "2026-11-12T21:38:25-05:00",
+      "date_label": "12 nov 2026, 21:38 (hora de Indianapolis, UTC-5)",
+      "summary": "Primera versión del simulador de dos cabezas, con esperas sincronizadas y un ejemplo.",
+      "heads": 2,
+      "has_dual": true
+    },
+    {
+      "version": "d2db9418c85b",
+      "commit": "0cd80dde8335ae0bf40fb9d6ece31e8c0ab8cf2b",
+      "date": "2026-11-12T08:44:03-05:00",
+      "date_label": "12 nov 2026, 08:44 (hora de Indianapolis, UTC-5)",
+      "summary": "Tira compacta de «Sin aceptar» que ya no cubre el editor (última de una sola cabeza).",
+      "heads": 1,
+      "has_dual": false
+    },
+    {
+      "version": "8114eb59e27f",
+      "commit": "fdb73e69d509a55212ad0394ff141d8fdebc0ca6",
+      "date": "2026-11-11T22:19:46-05:00",
+      "date_label": "11 nov 2026, 22:19 (hora de Indianapolis, UTC-5)",
+      "summary": "Vista previa punteada de la trayectoria y botones Aceptar / Cancelar al editar.",
+      "heads": 1,
+      "has_dual": false
+    },
+    {
+      "version": "beaad6ce5f1b",
+      "commit": "31720e4b3a924f98032edd6f65598c7c6be8eb75",
+      "date": "2026-11-11T14:57:25-05:00",
+      "date_label": "11 nov 2026, 14:57 (hora de Indianapolis, UTC-5)",
+      "summary": "La gráfica y el editor quedan vinculados, y los colores de G00–G03 se pueden cambiar.",
+      "heads": 1,
+      "has_dual": false
+    },
+    {
+      "version": "c787ea194d3c",
+      "commit": "9657126baa8d6a72faca7461f6bb95064ede62f7",
+      "date": "2026-11-11T13:47:38-05:00",
+      "date_label": "11 nov 2026, 13:47 (hora de Indianapolis, UTC-5)",
+      "summary": "En el teléfono, la gráfica sigue visible al editar el código, con divisor y seguimiento del cursor.",
+      "heads": 1,
+      "has_dual": false
+    },
+    {
+      "version": "e432abc1d311",
+      "commit": "c58adaacdc85b4679c3a4523715b961e4d05db92",
+      "date": "2026-11-11T13:21:46-05:00",
+      "date_label": "11 nov 2026, 13:21 (hora de Indianapolis, UTC-5)",
+      "summary": "Barras visibles en retrato en iPhone y ajustes de tamaño y modo de pantalla.",
+      "heads": 1,
+      "has_dual": false
+    }
+  ]
+}
