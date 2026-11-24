@@ -1898,9 +1898,11 @@ function simulate(text, opts) {
 
     for (const m of ms) {
       if (m === 3) { st.spindle = true; events.push("Husillo ON (M03)"); }
-      else if (m === 5) { st.spindle = false; events.push("Husillo OFF (M05)"); }
+      else if (m === 5) { st.spindle = false; events.push("Termina programa (M05)"); }
       else if (m === 9) { st.diecoat = true; events.push("Spray/diecoat ON (M9)"); }
       else if (m === 10) { st.diecoat = false; events.push("Spray OFF (M10)"); }
+      else if (m === 15) events.push("Knockout (M15)");
+      else if (m === 16) events.push("Knockout a home (M16)");
       else if (m === 34) { st.burner = true; st.seen_m34 = true; events.push("Quemador ON (M34)"); }
       else if (m === 35) { st.burner = false; st.seen_m35 = true; events.push("Quemador OFF (M35)"); }
       else if (m === 36) events.push("Contador de rines (M36)");
@@ -1908,9 +1910,11 @@ function simulate(text, opts) {
       else if (m === 17) events.push("Cierra tailstock (M17)");
       else if (m === 18) events.push("Abre tailstock (M18)");
       else if (m === 30) events.push("M30 fin Fanuc");
-      else if (m === 99) events.push("Retorno de subprograma (M99)");
+      else if (m === 99) events.push("Cierra el programa (M99)");
       else if (m === 98) {}
-      else if (m === 23 || m === 24 || m === 73) {
+      else if (m === 70 || m === 71 || m === 72 || m === 74 || m === 75 || m === 78) {
+        events.push("Enlace robot/PCD (M" + m + ")");
+      } else if (m === 23 || m === 24 || m === 73) {
         events.push("Mandril gira / ir a lugar seguro? (M" + m + ")");
         st.notes.push("L" + sl.line + ": M" + m + " función no confirmada (¿mandril gira / ir a lugar seguro?).");
       } else if (m >= 100 && m <= 199) events.push("Espera entre cabezas (M" + m + ")");
@@ -2587,12 +2591,17 @@ function waitLintIssues(sync, h) {
 function isSprayBlock(b) { return !!(b && b.diecoat && b.points && b.points.length >= 2); }
 function simHasSpray(s) { return !!(s && s.blocks && s.blocks.some(isSprayBlock)); }
 
-/* Etiquetas legibles de códigos M (confirmadas por Julio 2026-11-13; «?» = sin confirmar). */
+/* Etiquetas de códigos M (Julio 2026-11-13 y 2026-11-24; «?» = sin confirmar). M03 es husillo ON, no enlace robot/PCD. */
 const M_LABELS = {
-  2: "gira mandril (no es fin)", 3: "husillo ON", 5: "husillo OFF", 9: "spray/diecoat ON", 10: "spray OFF",
+  2: "gira mandril (no es fin)", 3: "husillo ON", 5: "termina programa", 9: "spray/diecoat ON", 10: "spray OFF",
+  15: "knockout", 16: "knockout a home",
   17: "cierra tailstock", 18: "abre tailstock", 30: "fin de programa", 34: "quemador ON", 35: "quemador OFF",
-  36: "contador de rines", 98: "llamar subprograma", 99: "retorno de subprograma",
-  23: "mandril gira / ir a lugar seguro (?)", 24: "mandril gira / ir a lugar seguro (?)", 73: "mandril gira / ir a lugar seguro (?)"
+  36: "contador de rines",
+  70: "enlace robot/PCD", 71: "enlace robot/PCD", 72: "enlace robot/PCD",
+  73: "mandril gira / ir a lugar seguro (?)",
+  74: "enlace robot/PCD", 75: "enlace robot/PCD", 78: "enlace robot/PCD",
+  98: "llamar subprograma", 99: "cierra el programa (fin/retorno)",
+  23: "mandril gira / ir a lugar seguro (?)", 24: "mandril gira / ir a lugar seguro (?)"
 };
 function mCodeLabel(m) {
   m = Number(m);
