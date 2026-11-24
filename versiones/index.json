@@ -1,9 +1,18 @@
 {
   "current": {
-    "version": "f799f09f34b2",
-    "summary": "Color de fondo día o noche (☀/🌙): se cambia desde el menú ⋯ o en Ajustes ⚙ y queda recordado en este aparato."
+    "version": "392c1291fbea",
+    "summary": "Etiquetas de códigos M según Julio: M15 knockout, M16 knockout a home, M05 termina programa, M17/M18 tailstock, M99 cierra el programa (fin/retorno), y M70/M71/M72/M74/M75/M78 enlace robot/PCD. M03 sigue como husillo ON (spindle on)."
   },
   "versions": [
+    {
+      "version": "f799f09f34b2",
+      "commit": "7c9d4bc48a2afa9e34bf438b1d0f5751bb908a78",
+      "date": "2026-11-18T09:13:06-05:00",
+      "date_label": "18 nov 2026, 09:13 (hora de Indianapolis, UTC-5)",
+      "summary": "Color de fondo día o noche (☀/🌙): se cambia desde el menú ⋯ o en Ajustes ⚙ y queda recordado en este aparato.",
+      "heads": 2,
+      "has_dual": true
+    },
     {
       "version": "6574d4431d72",
       "commit": "acdd1b7d",
